@@ -1,0 +1,3 @@
+# requirements.txt
+
+# Add your backend dependencies here 
