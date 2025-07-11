@@ -20,142 +20,110 @@ function App() {
       {/* Sidebar */}
       <aside className="w-64 bg-slate-900 text-white flex flex-col justify-between py-6 px-4">
         <div>
-          <div className="text-2xl font-bold mb-8 tracking-wide">FINSight</div>
+          <div className="text-2xl font-bold mb-8 tracking-wide text-green-300">w<span className="text-white">wealty</span></div>
           <nav className="space-y-2">
-            {sidebarItems.map(item => (
-              <div key={item.label} className="flex items-center px-3 py-2 rounded-lg hover:bg-slate-800 cursor-pointer transition">
+            {sidebarItems.map((item, idx) => (
+              <div key={item.label} className={`flex items-center px-3 py-2 rounded-lg cursor-pointer transition ${idx === 0 ? 'bg-slate-800' : 'hover:bg-slate-800'}`}> {/* Highlight Overview */}
                 <span className="mr-3 text-lg">{item.icon}</span>
                 <span className="font-medium">{item.label}</span>
               </div>
             ))}
           </nav>
-        </div>
-        <div className="flex items-center gap-3 mt-8">
-          <div className="w-10 h-10 rounded-full bg-slate-700 flex items-center justify-center text-lg">TR</div>
-          <div>
-            <div className="font-semibold">Tanzir Rahman</div>
-            <div className="text-xs text-slate-400">View profile</div>
+          {/* CSV Upload Link */}
+          <div className="mt-6">
+            <button className="w-full bg-green-500 hover:bg-green-600 text-white py-2 rounded-lg font-semibold transition">Upload CSV</button>
           </div>
         </div>
+        {/* Support Box */}
+        <div className="bg-slate-800 rounded-lg p-4 mb-6">
+          <div className="font-semibold mb-2">Have a question?</div>
+          <div className="text-xs text-slate-400 mb-3">Send us a message and we will get back to you in no time.</div>
+          <button className="w-full bg-gradient-to-r from-green-400 to-blue-500 text-white py-2 rounded-lg font-semibold transition">Contact us</button>
+        </div>
+        <button className="text-slate-400 hover:text-white text-left">Log out</button>
       </aside>
       {/* Main Content */}
       <main className="flex-1 bg-slate-100 p-8 overflow-y-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-2xl font-bold">Hello, Tanzir</h1>
-            <div className="text-slate-500 text-sm">May 19, 2023</div>
+            <h1 className="text-2xl font-bold">Welcome back, Shane</h1>
+            <div className="text-slate-500 text-sm">Here's an overview of all of your balances.</div>
           </div>
-          <input className="rounded-lg px-4 py-2 border border-slate-300 focus:outline-none focus:ring-2 focus:ring-slate-400" placeholder="Search here" />
-        </div>
-        {/* Dashboard Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Total Balance */}
-          <div className="bg-white rounded-xl shadow p-6 col-span-1 flex flex-col justify-between">
-            <div className="text-slate-500 text-sm mb-2">Total Balance</div>
-            <div className="text-3xl font-bold mb-2">$240,399</div>
-            <div className="flex items-center gap-2">
-              <div className="bg-slate-200 rounded px-3 py-1 text-xs font-semibold">Credit Card</div>
-              <div className="text-slate-400 text-xs">**** 2598</div>
-              <div className="ml-auto text-green-600 font-bold">$25,000</div>
-            </div>
-          </div>
-          {/* Goals */}
-          <div className="bg-white rounded-xl shadow p-6 col-span-1 flex flex-col justify-between">
-            <div className="text-slate-500 text-sm mb-2">Goals</div>
-            <div className="flex items-center justify-between mb-2">
-              <div className="text-2xl font-bold">$20,000</div>
-              <div className="text-xs text-slate-400">May, 2023</div>
-            </div>
-            <div className="w-full h-2 bg-slate-200 rounded-full mb-2">
-              <div className="h-2 bg-green-500 rounded-full" style={{ width: '60%' }}></div>
-            </div>
-            <div className="text-xs text-slate-500">Target Achieved: $12,500 / $20,000</div>
-          </div>
-          {/* Upcoming Bill */}
-          <div className="bg-white rounded-xl shadow p-6 col-span-1 flex flex-col justify-between">
-            <div className="text-slate-500 text-sm mb-2">Upcoming Bill</div>
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">Figma - Monthly</div>
-                  <div className="text-xs text-slate-400">May 15</div>
-                </div>
-                <div className="font-bold">$150</div>
-              </div>
-              <div className="flex justify-between items-center">
-                <div>
-                  <div className="font-semibold">Adobe - Yearly</div>
-                  <div className="text-xs text-slate-400">Jun 16</div>
-                </div>
-                <div className="font-bold">$559</div>
-              </div>
-            </div>
+          {/* Profile Avatar */}
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-slate-300 flex items-center justify-center text-lg">A</div>
           </div>
         </div>
-        {/* Recent Transactions & Statistics */}
+        {/* Account Balance Chart */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/* Recent Transactions */}
-          <div className="bg-white rounded-xl shadow p-6 col-span-2">
+          <div className="bg-white rounded-xl shadow p-6 col-span-2 flex flex-col justify-between">
             <div className="flex justify-between items-center mb-4">
-              <div className="font-semibold">Recent Transactions</div>
-              <button className="text-xs text-slate-500 hover:underline">View All</button>
-            </div>
-            <div className="divide-y divide-slate-100">
-              {['GTR 5', 'Polo Shirt', 'Biriyani', 'Taxi Fare', 'Keyboard'].map((item, idx) => (
-                <div key={item} className="flex justify-between py-2 items-center">
-                  <div>
-                    <div className="font-medium">{item}</div>
-                    <div className="text-xs text-slate-400">17 May 2023</div>
-                  </div>
-                  <div className="font-bold">${[160, 20, 10, 12, 22][idx]}</div>
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Statistics */}
-          <div className="bg-white rounded-xl shadow p-6 col-span-1">
-            <div className="font-semibold mb-4">Weekly Comparison</div>
-            {/* Placeholder for chart */}
-            <div className="h-32 flex items-end gap-2">
-              {[60, 40, 80, 30, 90, 50, 70].map((val, idx) => (
-                <div key={idx} className="bg-slate-300 rounded w-6" style={{ height: `${val}%` }}></div>
-              ))}
-            </div>
-            <div className="text-xs text-slate-400 mt-2 flex justify-between">
-              {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => <span key={day}>{day}</span>)}
-            </div>
-          </div>
-        </div>
-        {/* Expenses Breakdown */}
-        <div className="bg-white rounded-xl shadow p-6 mb-8">
-          <div className="font-semibold mb-4">Expenses Breakdown</div>
-          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-            {[
-              { label: 'Housing', amount: 250 },
-              { label: 'Food', amount: 350 },
-              { label: 'Transportation', amount: 50 },
-              { label: 'Entertainment', amount: 80 },
-              { label: 'Shopping', amount: 420 },
-              { label: 'Others', amount: 650 },
-            ].map((cat) => (
-              <div key={cat.label} className="bg-slate-50 rounded-lg p-4 flex flex-col items-center">
-                <div className="font-bold text-lg">${cat.amount}</div>
-                <div className="text-xs text-slate-500">{cat.label}</div>
+              <div className="font-semibold">Account Balance</div>
+              <div className="flex gap-2">
+                {['Day', 'Week', 'Month', 'Year'].map((t) => (
+                  <button key={t} className="px-3 py-1 rounded text-xs font-semibold bg-slate-100 hover:bg-slate-200">{t}</button>
+                ))}
               </div>
-            ))}
+            </div>
+            {/* Placeholder for chart */}
+            <div className="h-40 bg-slate-50 rounded flex items-center justify-center text-slate-400">[Chart Placeholder]</div>
+          </div>
+          {/* Summary Cards */}
+          <div className="flex flex-col gap-4">
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="text-slate-500 text-sm mb-1">Total Balance</div>
+              <div className="text-xl font-bold mb-1">$11,716.77</div>
+              <div className="text-green-500 text-xs font-semibold">+4%</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="text-slate-500 text-sm mb-1">Main Account</div>
+              <div className="text-xl font-bold">$3,252.13</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="text-slate-500 text-sm mb-1">Savings</div>
+              <div className="text-xl font-bold">$4,000.00</div>
+              <div className="text-green-500 text-xs font-semibold">+10%</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-4 flex flex-col">
+              <div className="text-slate-500 text-sm mb-1">Investments</div>
+              <div className="text-xl font-bold">$4,436.64</div>
+              <div className="text-green-500 text-xs font-semibold">+27.24%</div>
+            </div>
           </div>
         </div>
-        {/* CSV Upload & Chatbot */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="font-semibold mb-2">Upload Transactions</div>
-            <UploadCSV onFileUpload={setCsvFile} />
+        {/* Recent Transactions */}
+        <div className="bg-white rounded-xl shadow p-6 mb-8">
+          <div className="flex justify-between items-center mb-4">
+            <div className="font-semibold">Recent Transactions</div>
+            <button className="text-xs text-slate-500 hover:underline">See all</button>
           </div>
-          <div className="bg-white rounded-xl shadow p-6">
-            <div className="font-semibold mb-2">FinSight Chatbot</div>
-            <Chatbot />
-          </div>
+          <table className="w-full text-left">
+            <thead>
+              <tr className="text-xs text-slate-400">
+                <th className="py-2">Name</th>
+                <th>Date</th>
+                <th>Time</th>
+                <th>Status</th>
+                <th className="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[
+                { name: 'Daniel Cole', date: 'Today', time: '21:09', status: 'Pending', amount: '-$100.00', statusColor: 'bg-yellow-100 text-yellow-700' },
+                { name: 'Tina Wallace', date: '11 Dec', time: '11:31', status: 'Completed', amount: '-$25.00', statusColor: 'bg-green-100 text-green-700' },
+                { name: 'Amazon', date: '11 Dec', time: '09:16', status: 'Completed', amount: '-$246.50', statusColor: 'bg-green-100 text-green-700' },
+              ].map((tx, idx) => (
+                <tr key={idx} className="border-t border-slate-100">
+                  <td className="py-2 font-medium">{tx.name}</td>
+                  <td>{tx.date}</td>
+                  <td>{tx.time}</td>
+                  <td><span className={`px-2 py-1 rounded text-xs font-semibold ${tx.statusColor}`}>{tx.status}</span></td>
+                  <td className="text-right font-bold">{tx.amount}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </main>
     </div>
