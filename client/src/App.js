@@ -1,17 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import SummaryCards from './components/SummaryCards';
-import { summaryCards } from './data/summaryCards';
+import Overview from './components/Overview';
+import MonthlyAnalysis from './components/MonthlyAnalysis';
 
 const sidebarLinks = [
-  { label: 'Overview', icon: '📊' }
-];
-
-const columns = [
-  { key: 'Transaction Date', label: 'Transaction Date' },
-  { key: 'Description', label: 'Description' },
-  { key: 'Category', label: 'Category' },
-  { key: 'Type', label: 'Type' },
-  { key: 'Amount', label: 'Amount' }
+  { label: 'Overview', icon: '📊' },
+  { label: 'Analysis', icon: '📈' }
 ];
 
 export default function App() {
@@ -21,9 +14,8 @@ export default function App() {
   const fileInputRef = useRef();
   const [transactions, setTransactions] = useState([]);
   
-  // Pagination state
-  const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize, setPageSize] = useState(20);
+  // Tab state
+  const [activeTab, setActiveTab] = useState('Overview');
 
   useEffect(() => {
     fetch('http://192.168.4.22:8000/transactions')
@@ -65,33 +57,6 @@ export default function App() {
     }
   };
 
-  // Pagination calculations
-  const totalPages = Math.ceil(transactions.length / pageSize);
-  const startIndex = (currentPage - 1) * pageSize;
-  const endIndex = startIndex + pageSize;
-  const currentTransactions = transactions.slice(startIndex, endIndex);
-
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-  };
-
-  const handlePreviousPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-
-  const handleNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-
-  const handlePageSizeChange = (newPageSize) => {
-    setPageSize(parseInt(newPageSize));
-    setCurrentPage(1); // Reset to first page when changing page size
-  };
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between py-6 px-4">
@@ -100,7 +65,8 @@ export default function App() {
             {sidebarLinks.map((item, idx) => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition text-gray-700 hover:bg-gray-100 bg-gray-100 font-semibold"
+                className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition text-gray-700 hover:bg-gray-100 ${activeTab === item.label ? 'bg-gray-100 font-semibold' : ''}`}
+                onClick={() => setActiveTab(item.label)}
               >
                 <span className="text-lg">{item.icon}</span>
                 <span>{item.label}</span>
@@ -150,84 +116,9 @@ export default function App() {
             </div>
           </div>
         </div>
-        <SummaryCards cards={summaryCards} />
-        <div className="flex justify-between items-center mb-2">
-          <div className="text-lg font-bold">Product Analytics</div>
-          <div className="flex gap-2">
-            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Customize</button>
-            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Filter</button>
-            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Export</button>
-          </div>
-        </div>
-        <div className="bg-white rounded-xl shadow overflow-x-auto">
-          <table className="min-w-full text-sm">
-            <thead>
-              <tr>
-                {columns.map(col => (
-                  <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {currentTransactions.map((tx, idx) => (
-                <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
-                  {columns.map(col => (
-                    <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {/* Pagination Controls */}
-        <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
-          <div className="flex items-center gap-4">
-            <div>
-              Showing {startIndex + 1} to {Math.min(endIndex, transactions.length)} of {transactions.length} transactions
-            </div>
-            <div className="flex items-center gap-2">
-              <span>Rows per page:</span>
-              <select 
-                value={pageSize}
-                onChange={(e) => handlePageSizeChange(e.target.value)}
-                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-              >
-                <option value={10}>10</option>
-                <option value={20}>20</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-              </select>
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={handlePreviousPage}
-              disabled={currentPage === 1}
-              className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              Previous
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
-              <button
-                key={page}
-                onClick={() => handlePageChange(page)}
-                className={`px-3 py-1 rounded ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-              >
-                {page}
-              </button>
-            ))}
-            <button 
-              onClick={handleNextPage}
-              disabled={currentPage === totalPages}
-              className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
-            >
-              Next
-            </button>
-          </div>
-          <div>
-            Page {currentPage} of {totalPages}
-          </div>
-        </div>
+        
+        {activeTab === 'Overview' && <Overview transactions={transactions} />}
+        {activeTab === 'Analysis' && <MonthlyAnalysis transactions={transactions} />}
       </main>
     </div>
   );
