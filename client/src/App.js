@@ -1,56 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
+import SummaryCards from './components/SummaryCards';
+import { summaryCards } from './data/summaryCards';
 
 const sidebarLinks = [
-  { label: 'Product Analytics', icon: '📊' }
-];
-
-const summaryCards = [
-  {
-    label: 'Avg. Monthly Revenue',
-    value: '$4,250.25',
-    change: '+2.15%',
-    changeColor: 'text-green-600',
-    sub: 'From last month',
-  },
-  {
-    label: 'Avg. Monthly Sales',
-    value: '1,230',
-    change: '+4.12%',
-    changeColor: 'text-green-600',
-    sub: 'From last month',
-  },
-  {
-    label: 'Avg. Favorites',
-    value: '13,180',
-    change: '-1.20%',
-    changeColor: 'text-red-500',
-    sub: 'From last month',
-  },
-  {
-    label: 'Search Volume',
-    value: '2,440',
-    change: '+2.15%',
-    changeColor: 'text-green-600',
-    sub: 'From last month',
-  },
-];
-
-const transactions = [
-  {
-    date: '2024-07-13',
-    description: 'Amazon Purchase',
-    category: 'Shopping',
-    type: 'Debit',
-    amount: '-$45.00'
-  },
-  {
-    date: '2024-07-12',
-    description: 'Salary',
-    category: 'Income',
-    type: 'Credit',
-    amount: '+$2,000.00'
-  },
-  // ...more transactions
+  { label: 'Overview', icon: '📊' }
 ];
 
 const columns = [
@@ -62,12 +15,10 @@ const columns = [
 ];
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState('Product Analytics');
   const [csvFile, setCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
-
   const [transactions, setTransactions] = useState([]);
 
   useEffect(() => {
@@ -110,60 +61,30 @@ export default function App() {
     }
   };
 
-
-
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
       <aside className="w-64 bg-white border-r border-gray-200 flex flex-col justify-between py-6 px-4">
         <div>
-          {/* Logo and user */}
-          <div className="flex items-center gap-3 mb-8">
-            <div className="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-2xl">🏆</div>
-            <div>
-              <div className="font-semibold text-gray-800">Maria's Jewelry</div>
-              <div className="text-xs text-gray-400">2,540 Sales</div>
-            </div>
-          </div>
-          {/* Navigation */}
           <nav className="space-y-1">
             {sidebarLinks.map((item, idx) => (
               <div
                 key={item.label}
-                className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition text-gray-700 hover:bg-gray-100 ${item.label === 'Product Analytics' ? 'bg-gray-100 font-semibold' : ''}`}
-                onClick={() => setActiveTab(item.label)}
+                className="flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition text-gray-700 hover:bg-gray-100 bg-gray-100 font-semibold"
               >
                 <span className="text-lg">{item.icon}</span>
                 <span>{item.label}</span>
               </div>
             ))}
           </nav>
-          {/* Plan/Upgrade */}
-          <div className="mt-8 bg-gray-100 rounded-lg p-4 flex items-center justify-between">
-            <div>
-              <div className="text-xs text-gray-500 mb-1">Product Analytics</div>
-              <div className="font-bold text-lg">4/10</div>
-            </div>
-            <button className="text-xs text-blue-600 font-semibold underline">Upgrade Plan →</button>
-          </div>
-        </div>
-        <div className="mt-8">
-          <button className="w-full bg-gray-200 text-gray-700 py-2 rounded-lg font-semibold flex items-center justify-center gap-2">
-            <span>＋</span> Add to Chrome, It's Free
-          </button>
         </div>
       </aside>
-      {/* Main Content */}
       <main className="flex-1 p-8">
-        {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-3">
             <input
               className="rounded-lg px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
               placeholder="Search..."
             />
-            <button className="ml-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-500 text-sm">⌨️ K</button>
-            {/* CSV Upload */}
             <input
               type="file"
               accept=".csv"
@@ -192,48 +113,13 @@ export default function App() {
             )}
           </div>
           <div className="flex items-center gap-6">
-            <div className="flex items-center gap-1 text-gray-500">
-              <span>USD</span>
-              <span>▼</span>
-            </div>
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-700">OE</div>
+            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-lg font-bold text-blue-700">SW</div>
             <div className="text-right">
-              <div className="font-semibold text-gray-800">Omer Erdogan</div>
-              <div className="text-xs text-gray-400">Hobby</div>
+              <div className="font-semibold text-gray-800">Shane W.</div>
             </div>
           </div>
         </div>
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          {summaryCards.map((card) => (
-            <div key={card.label} className="bg-white rounded-xl shadow p-6 flex flex-col gap-2">
-              <div className="text-gray-500 text-xs font-semibold">{card.label}</div>
-              <div className="flex items-end gap-2">
-                <div className="text-2xl font-bold">{card.value}</div>
-                <div className={`text-xs font-semibold ${card.changeColor}`}>{card.change}</div>
-              </div>
-              <div className="text-xs text-gray-400">{card.sub}</div>
-              {/* Simple chart placeholder */}
-              <div className="h-8 mt-2 bg-gray-100 rounded w-full flex items-center justify-center text-gray-300 text-xs">[Chart]</div>
-            </div>
-          ))}
-        </div>
-        {/* Tabs */}
-        <div className="flex gap-2 mb-4">
-          <button
-            className={`px-4 py-2 rounded-lg font-semibold text-sm ${activeTab === 'Product Analytics' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-            onClick={() => setActiveTab('Product Analytics')}
-          >
-            Product Analytics
-          </button>
-          <button
-            className={`px-4 py-2 rounded-lg font-semibold text-sm ${activeTab === 'Tag Analytics' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700'}`}
-            onClick={() => setActiveTab('Tag Analytics')}
-          >
-            Tag Analytics
-          </button>
-        </div>
-        {/* Table Controls */}
+        <SummaryCards cards={summaryCards} />
         <div className="flex justify-between items-center mb-2">
           <div className="text-lg font-bold">Product Analytics</div>
           <div className="flex gap-2">
@@ -242,7 +128,6 @@ export default function App() {
             <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Export</button>
           </div>
         </div>
-        {/* Table */}
         <div className="bg-white rounded-xl shadow overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
@@ -263,7 +148,6 @@ export default function App() {
             </tbody>
           </table>
         </div>
-        {/* Pagination */}
         <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
           <div>Showing 7 of 7</div>
           <div className="flex gap-1">
