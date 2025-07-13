@@ -1,15 +1,7 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 const sidebarLinks = [
-  { label: 'Dashboard', icon: '🏠' },
-  { label: 'Product Analytics', icon: '📊' },
-  { label: 'Shop Analyzer', icon: '🛒' },
-  { label: 'Keyword Research', icon: '🔑' },
-  { label: 'Watchlist', icon: '👁️' },
-  { label: 'Etsy Calculator', icon: '🧮' },
-  { label: 'Extension', icon: '🧩' },
-  { label: 'Affiliate Program', icon: '🤝' },
-  { label: 'Upgrade', icon: '⬆️' },
+  { label: 'Product Analytics', icon: '📊' }
 ];
 
 const summaryCards = [
@@ -45,68 +37,28 @@ const summaryCards = [
 
 const transactions = [
   {
-    product: 'New Balance Men\'s 608 V5 Casual',
-    price: '$45',
-    shop: 'WearPhysique',
-    shopColor: 'bg-blue-100 text-blue-700',
-    score: 95,
-    revenue: '$27,450',
-    img: 'https://via.placeholder.com/40',
+    date: '2024-07-13',
+    description: 'Amazon Purchase',
+    category: 'Shopping',
+    type: 'Debit',
+    amount: '-$45.00'
   },
   {
-    product: 'Sperry Top-Sider Men\'s Billfish Ultralite',
-    price: '$72',
-    shop: 'MuwaitUK',
-    shopColor: 'bg-pink-100 text-pink-700',
-    score: 80,
-    revenue: '$15,340',
-    img: 'https://via.placeholder.com/40',
+    date: '2024-07-12',
+    description: 'Salary',
+    category: 'Income',
+    type: 'Credit',
+    amount: '+$2,000.00'
   },
-  {
-    product: 'Men\'s Minimalist Stainless Steel Slim',
-    price: '$124',
-    shop: 'SeFashion',
-    shopColor: 'bg-gray-100 text-gray-700',
-    score: 55,
-    revenue: '$12,380',
-    img: 'https://via.placeholder.com/40',
-  },
-  {
-    product: 'Timberland Men\'s Classic Leather',
-    price: '$32',
-    shop: 'Twoday',
-    shopColor: 'bg-orange-100 text-orange-700',
-    score: 95,
-    revenue: '$8,750',
-    img: 'https://via.placeholder.com/40',
-  },
-  {
-    product: 'KBETHOS Original Classic Low Profile',
-    price: '$24',
-    shop: 'Manifestable',
-    shopColor: 'bg-yellow-100 text-yellow-700',
-    score: 80,
-    revenue: '$6,450',
-    img: 'https://via.placeholder.com/40',
-  },
-  {
-    product: 'Light Abstract Shapes iPhone 14 Case',
-    price: '$27',
-    shop: 'JewalinCo',
-    shopColor: 'bg-purple-100 text-purple-700',
-    score: 75,
-    revenue: '$5,840',
-    img: 'https://via.placeholder.com/40',
-  },
-  {
-    product: 'Embroidered BMO Beanie Hat',
-    price: '$14',
-    shop: 'MinimalFas',
-    shopColor: 'bg-green-100 text-green-700',
-    score: 95,
-    revenue: '$5,655',
-    img: 'https://via.placeholder.com/40',
-  },
+  // ...more transactions
+];
+
+const columns = [
+  { key: 'Transaction Date', label: 'Transaction Date' },
+  { key: 'Description', label: 'Description' },
+  { key: 'Category', label: 'Category' },
+  { key: 'Type', label: 'Type' },
+  { key: 'Amount', label: 'Amount' }
 ];
 
 export default function App() {
@@ -115,6 +67,16 @@ export default function App() {
   const [uploadStatus, setUploadStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
+
+  const [transactions, setTransactions] = useState([]);
+
+  useEffect(() => {
+    fetch('http://192.168.4.22:8000/transactions')
+      .then(res => res.json())
+      .then(data => {
+        if (data.transactions) setTransactions(data.transactions);
+      });
+  }, []);
 
   const handleFileChange = (e) => {
     setCsvFile(e.target.files[0]);
@@ -147,6 +109,8 @@ export default function App() {
       setIsUploading(false);
     }
   };
+
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -282,36 +246,18 @@ export default function App() {
         <div className="bg-white rounded-xl shadow overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead>
-              <tr className="text-gray-400 border-b">
-                <th className="py-3 px-4 text-left font-semibold"><input type="checkbox" /></th>
-                <th className="py-3 px-4 text-left font-semibold">Product</th>
-                <th className="py-3 px-4 text-left font-semibold">Price</th>
-                <th className="py-3 px-4 text-left font-semibold">Shop Name</th>
-                <th className="py-3 px-4 text-left font-semibold">Visibility Score</th>
-                <th className="py-3 px-4 text-right font-semibold">Mo. Revenue</th>
+              <tr>
+                {columns.map(col => (
+                  <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
+                ))}
               </tr>
             </thead>
             <tbody>
               {transactions.map((tx, idx) => (
                 <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
-                  <td className="py-3 px-4"><input type="checkbox" /></td>
-                  <td className="py-3 px-4 flex items-center gap-3">
-                    <img src={tx.img} alt="product" className="w-10 h-10 rounded object-cover border" />
-                    <span className="font-medium text-gray-800 truncate max-w-xs">{tx.product}</span>
-                  </td>
-                  <td className="py-3 px-4">{tx.price}</td>
-                  <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-semibold ${tx.shopColor}`}>{tx.shop}</span>
-                  </td>
-                  <td className="py-3 px-4">
-                    <div className="flex items-center gap-2">
-                      <div className="w-24 h-2 bg-gray-200 rounded-full">
-                        <div className="h-2 bg-blue-500 rounded-full" style={{ width: `${tx.score}%` }}></div>
-                      </div>
-                      <span className="text-xs font-semibold text-gray-700">{tx.score}</span>
-                    </div>
-                  </td>
-                  <td className="py-3 px-4 text-right font-bold text-gray-800">{tx.revenue}</td>
+                  {columns.map(col => (
+                    <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>
+                  ))}
                 </tr>
               ))}
             </tbody>
