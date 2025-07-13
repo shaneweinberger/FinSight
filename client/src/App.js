@@ -20,6 +20,10 @@ export default function App() {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef();
   const [transactions, setTransactions] = useState([]);
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
 
   useEffect(() => {
     fetch('http://192.168.4.22:8000/transactions')
@@ -59,6 +63,33 @@ export default function App() {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(transactions.length / pageSize);
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = startIndex + pageSize;
+  const currentTransactions = transactions.slice(startIndex, endIndex);
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePreviousPage = () => {
+    if (currentPage > 1) {
+      setCurrentPage(currentPage - 1);
+    }
+  };
+
+  const handleNextPage = () => {
+    if (currentPage < totalPages) {
+      setCurrentPage(currentPage + 1);
+    }
+  };
+
+  const handlePageSizeChange = (newPageSize) => {
+    setPageSize(parseInt(newPageSize));
+    setCurrentPage(1); // Reset to first page when changing page size
   };
 
   return (
@@ -138,7 +169,7 @@ export default function App() {
               </tr>
             </thead>
             <tbody>
-              {transactions.map((tx, idx) => (
+              {currentTransactions.map((tx, idx) => (
                 <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
                   {columns.map(col => (
                     <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>
@@ -148,15 +179,54 @@ export default function App() {
             </tbody>
           </table>
         </div>
+        {/* Pagination Controls */}
         <div className="flex justify-between items-center mt-4 text-sm text-gray-500">
-          <div>Showing 7 of 7</div>
-          <div className="flex gap-1">
-            <button className="px-2 py-1 rounded bg-gray-100">1</button>
-            <button className="px-2 py-1 rounded bg-gray-100">2</button>
-            <span>...</span>
-            <button className="px-2 py-1 rounded bg-gray-100">10</button>
+          <div className="flex items-center gap-4">
+            <div>
+              Showing {startIndex + 1} to {Math.min(endIndex, transactions.length)} of {transactions.length} transactions
+            </div>
+            <div className="flex items-center gap-2">
+              <span>Rows per page:</span>
+              <select 
+                value={pageSize}
+                onChange={(e) => handlePageSizeChange(e.target.value)}
+                className="px-2 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+              >
+                <option value={10}>10</option>
+                <option value={20}>20</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
-          <div>Lines per page <span className="font-semibold">7/12</span></div>
+          <div className="flex gap-2">
+            <button 
+              onClick={handlePreviousPage}
+              disabled={currentPage === 1}
+              className={`px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              Previous
+            </button>
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(page => (
+              <button
+                key={page}
+                onClick={() => handlePageChange(page)}
+                className={`px-3 py-1 rounded ${currentPage === page ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+              >
+                {page}
+              </button>
+            ))}
+            <button 
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages}
+              className={`px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-100 text-gray-300 cursor-not-allowed' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+            >
+              Next
+            </button>
+          </div>
+          <div>
+            Page {currentPage} of {totalPages}
+          </div>
         </div>
       </main>
     </div>
