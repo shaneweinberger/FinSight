@@ -1,8 +1,6 @@
 import React, { useState } from 'react';
-import SummaryCards from './SummaryCards';
-import DateRangeCard from './DateRangeCard';
+import SummaryCard from './SummaryCard';
 import Pagination from './Pagination';
-import { summaryCards } from '../data/summaryCards';
 
 const Overview = ({ transactions }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -33,8 +31,7 @@ const Overview = ({ transactions }) => {
 
   return (
     <div>
-      <DateRangeCard transactions={transactions} />
-      <SummaryCards cards={summaryCards} />
+      <SummaryCard transactions={transactions} />
       
       <div className="flex justify-between items-center mb-2">
         <div className="text-lg font-bold">Product Analytics</div>

@@ -1,12 +1,15 @@
 import React, { useState } from 'react';
-import DateRangeCard from './DateRangeCard';
+import SummaryCard from './SummaryCard';
 import TimeFilter from './TimeFilter';
 import Pagination from './Pagination';
+import ExpensesByCategory from './ExpensesByCategory';
 
 const MonthlyAnalysis = ({ transactions }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
   const [filteredTransactions, setFilteredTransactions] = useState(transactions);
+  const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
   const columns = [
     { key: 'Transaction Date', label: 'Transaction Date' },
@@ -26,6 +29,9 @@ const MonthlyAnalysis = ({ transactions }) => {
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
   const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+  const displayedTransactions = selectedCategory
+    ? filteredTransactions.filter(tx => tx.Category === selectedCategory)
+    : filteredTransactions;
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -41,14 +47,36 @@ const MonthlyAnalysis = ({ transactions }) => {
     setCurrentPage(1); // Reset to first page when filtering
   };
 
+  const handlePeriodChange = ({ startDate, endDate }) => {
+    setDateRange({ startDate, endDate });
+  };
+
   return (
     <div>
       <TimeFilter 
         transactions={transactions} 
         onFilterChange={handleFilterChange} 
+        onPeriodChange={handlePeriodChange}
       />
       
-      <DateRangeCard transactions={filteredTransactions} />
+      <div className="flex flex-row gap-6 items-start mb-6">
+        <div className="w-64 flex-shrink-0">
+          <SummaryCard 
+            transactions={filteredTransactions} 
+            startDate={dateRange.startDate} 
+            endDate={dateRange.endDate} 
+          />
+        </div>
+        <div className="flex-1">
+          <ExpensesByCategory 
+            transactions={filteredTransactions} 
+            startDate={dateRange.startDate} 
+            endDate={dateRange.endDate} 
+            selectedCategory={selectedCategory}
+            onCategorySelect={setSelectedCategory}
+          />
+        </div>
+      </div>
       
       <div className="flex justify-between items-center mb-2">
         <div className="text-lg font-bold">Analysis</div>
@@ -69,7 +97,7 @@ const MonthlyAnalysis = ({ transactions }) => {
             </tr>
           </thead>
           <tbody>
-            {currentTransactions.map((tx, idx) => (
+            {displayedTransactions.slice(startIndex, endIndex).map((tx, idx) => (
               <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
                 {columns.map(col => (
                   <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const TimeFilter = ({ transactions, onFilterChange }) => {
+const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
   const [viewMode, setViewMode] = useState('monthly'); // 'monthly' or 'weekly'
   const [selectedPeriod, setSelectedPeriod] = useState('');
   const [availablePeriods, setAvailablePeriods] = useState([]);
@@ -71,6 +71,44 @@ const TimeFilter = ({ transactions, onFilterChange }) => {
     onFilterChange(filtered);
   }, [selectedPeriod, viewMode, transactions, onFilterChange]);
 
+  // Helper to get start and end dates for a period
+  const getPeriodRange = (period, mode) => {
+    if (!period) return { startDate: '', endDate: '' };
+    if (mode === 'monthly') {
+      const [year, month] = period.split('-');
+      const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
+      const endDate = new Date(parseInt(year), parseInt(month), 0); // last day of month
+      return {
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+      };
+    } else {
+      const [year, week] = period.split('-');
+      // Week starts on Monday
+      const simple = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
+      const dayOfWeek = simple.getDay();
+      const ISOweekStart = new Date(simple);
+      if (dayOfWeek <= 4)
+        ISOweekStart.setDate(simple.getDate() - simple.getDay() + 1);
+      else
+        ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
+      const ISOweekEnd = new Date(ISOweekStart);
+      ISOweekEnd.setDate(ISOweekStart.getDate() + 6);
+      return {
+        startDate: ISOweekStart.toISOString().split('T')[0],
+        endDate: ISOweekEnd.toISOString().split('T')[0],
+      };
+    }
+  };
+
+  // Callbacks for when period changes
+  useEffect(() => {
+    if (onPeriodChange) {
+      const { startDate, endDate } = getPeriodRange(selectedPeriod, viewMode);
+      onPeriodChange({ startDate, endDate, viewMode, selectedPeriod });
+    }
+  }, [selectedPeriod, viewMode, onPeriodChange]);
+
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
     setSelectedPeriod(''); // Reset selection when changing view mode
@@ -83,7 +121,20 @@ const TimeFilter = ({ transactions, onFilterChange }) => {
       return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long' });
     } else {
       const [year, week] = period.split('-');
-      return `Week ${week}, ${year}`;
+      // Get the Monday date for this week
+      const simple = new Date(parseInt(year), 0, 1 + (parseInt(week) - 1) * 7);
+      const dayOfWeek = simple.getDay();
+      const mondayDate = new Date(simple);
+      if (dayOfWeek <= 4)
+        mondayDate.setDate(simple.getDate() - simple.getDay() + 1);
+      else
+        mondayDate.setDate(simple.getDate() + 8 - simple.getDay());
+      
+      return mondayDate.toLocaleDateString('en-US', { 
+        month: 'short', 
+        day: 'numeric',
+        year: 'numeric'
+      });
     }
   };
 
