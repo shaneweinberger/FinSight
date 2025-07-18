@@ -8,10 +8,12 @@ const sidebarLinks = [
 ];
 
 export default function App() {
-  const [csvFile, setCsvFile] = useState(null);
+  const [creditCsvFile, setCreditCsvFile] = useState(null);
+  const [debitCsvFile, setDebitCsvFile] = useState(null);
   const [uploadStatus, setUploadStatus] = useState('');
   const [isUploading, setIsUploading] = useState(false);
-  const fileInputRef = useRef();
+  const creditFileInputRef = useRef();
+  const debitFileInputRef = useRef();
   const [transactions, setTransactions] = useState([]);
   
   // Tab state
@@ -25,28 +27,35 @@ export default function App() {
       });
   }, []);
 
-  const handleFileChange = (e) => {
-    setCsvFile(e.target.files[0]);
+  const handleCreditFileChange = (e) => {
+    setCreditCsvFile(e.target.files[0]);
+    setUploadStatus('');
+  };
+  const handleDebitFileChange = (e) => {
+    setDebitCsvFile(e.target.files[0]);
     setUploadStatus('');
   };
 
-  const handleUpload = async () => {
-    if (!csvFile) {
+  const handleUpload = async (type) => {
+    const file = type === 'credit' ? creditCsvFile : debitCsvFile;
+    if (!file) {
       setUploadStatus('Please select a CSV file.');
       return;
     }
     setIsUploading(true);
     const formData = new FormData();
-    formData.append('file', csvFile);
+    formData.append('file', file);
+    formData.append('type', type);
     try {
       const response = await fetch('http://192.168.4.22:8000/upload-csv', {
         method: 'POST',
         body: formData,
       });
       const data = await response.json();
-      if (data.success) {
+      if (data.message) {
         setUploadStatus('Upload successful!');
-        setCsvFile(null);
+        if (type === 'credit') setCreditCsvFile(null);
+        if (type === 'debit') setDebitCsvFile(null);
       } else {
         setUploadStatus(data.error || 'Upload failed.');
       }
@@ -82,28 +91,53 @@ export default function App() {
               className="rounded-lg px-4 py-2 border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-200 bg-white"
               placeholder="Search..."
             />
+            {/* Credit Card Upload */}
             <input
               type="file"
               accept=".csv"
-              ref={fileInputRef}
+              ref={creditFileInputRef}
               className="hidden"
-              onChange={handleFileChange}
+              onChange={handleCreditFileChange}
             />
             <button
               type="button"
               className="ml-2 px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition"
               disabled={isUploading}
-              onClick={() => fileInputRef.current && fileInputRef.current.click()}
+              onClick={() => creditFileInputRef.current && creditFileInputRef.current.click()}
             >
-              Select CSV
+              Select Credit Card CSV
             </button>
             <button
               type="button"
               className="ml-2 px-3 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition"
-              disabled={!csvFile || isUploading}
-              onClick={handleUpload}
+              disabled={!creditCsvFile || isUploading}
+              onClick={() => handleUpload('credit')}
             >
-              {isUploading ? 'Uploading...' : 'Upload CSV'}
+              {isUploading && creditCsvFile ? 'Uploading...' : 'Upload Credit CSV'}
+            </button>
+            {/* Debit Card Upload */}
+            <input
+              type="file"
+              accept=".csv"
+              ref={debitFileInputRef}
+              className="hidden"
+              onChange={handleDebitFileChange}
+            />
+            <button
+              type="button"
+              className="ml-2 px-3 py-2 rounded-lg bg-green-500 text-white text-sm font-semibold hover:bg-green-600 transition"
+              disabled={isUploading}
+              onClick={() => debitFileInputRef.current && debitFileInputRef.current.click()}
+            >
+              Select Debit Card CSV
+            </button>
+            <button
+              type="button"
+              className="ml-2 px-3 py-2 rounded-lg bg-blue-500 text-white text-sm font-semibold hover:bg-blue-600 transition"
+              disabled={!debitCsvFile || isUploading}
+              onClick={() => handleUpload('debit')}
+            >
+              {isUploading && debitCsvFile ? 'Uploading...' : 'Upload Debit CSV'}
             </button>
             {uploadStatus && (
               <span className={`ml-2 text-xs ${uploadStatus.includes('success') ? 'text-green-600' : 'text-red-500'}`}>{uploadStatus}</span>

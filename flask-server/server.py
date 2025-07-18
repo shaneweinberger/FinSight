@@ -29,32 +29,37 @@ def upload_csv():
         # Check if file is present in request
         if 'file' not in request.files:
             return jsonify({'error': 'No file provided'}), 400
-        
         file = request.files['file']
-        
         # Check if file was selected
         if file.filename == '':
             return jsonify({'error': 'No file selected'}), 400
-        
         # Check if file type is allowed
         if not allowed_file(file.filename):
             return jsonify({'error': 'Only CSV files are allowed'}), 400
-        
+        # Determine upload type (credit or debit)
+        upload_type = request.form.get('type')
+        if upload_type not in ['credit', 'debit']:
+            return jsonify({'error': 'Invalid or missing upload type. Must be "credit" or "debit".'}), 400
+        # Set target folder
+        if upload_type == 'credit':
+            target_folder = 'credit_uploads'
+        else:
+            target_folder = 'debit_uploads'
+        # Create target folder if it doesn't exist
+        if not os.path.exists(target_folder):
+            os.makedirs(target_folder)
         # Secure the filename and save the file
         filename = secure_filename(file.filename)
-        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        filepath = os.path.join(target_folder, filename)
         file.save(filepath)
-        
         # Read and validate CSV file
         try:
             df = pd.read_csv(filepath)
             row_count = len(df)
             column_count = len(df.columns)
-
             # Trigger ETL script after successful upload and validation
-            etl_script = os.path.join(os.path.dirname(__file__), 'bronze', 'initial_cleaning_etl.py')
+            etl_script = os.path.join(os.path.dirname(__file__), 'bronze', 'initial_cleaning_credit_etl.py')
             subprocess.Popen(['python', etl_script])
-            
             return jsonify({
                 'message': 'File uploaded successfully',
                 'filename': filename,
@@ -66,7 +71,6 @@ def upload_csv():
             # If CSV is invalid, delete the file and return error
             os.remove(filepath)
             return jsonify({'error': f'Invalid CSV file: {str(e)}'}), 400
-            
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
