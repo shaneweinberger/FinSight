@@ -3,12 +3,13 @@ from flask_cors import CORS
 import os
 import pandas as pd
 from werkzeug.utils import secure_filename
+import subprocess
 
 app = Flask(__name__)
 CORS(app)
 
 # Configure upload folder
-UPLOAD_FOLDER = 'uploads'
+UPLOAD_FOLDER = 'gold'
 ALLOWED_EXTENSIONS = {'csv'}
 
 # Create uploads directory if it doesn't exist
@@ -52,6 +53,10 @@ def upload_csv():
             df = pd.read_csv(filepath)
             row_count = len(df)
             column_count = len(df.columns)
+
+            # Trigger ETL script after successful upload and validation
+            etl_script = os.path.join(os.path.dirname(__file__), 'bronze', 'initial_cleaning_etl.py')
+            subprocess.Popen(['python', etl_script])
             
             return jsonify({
                 'message': 'File uploaded successfully',
@@ -82,6 +87,28 @@ def get_uploaded_files():
                         'size': file_size
                     })
         return jsonify({'files': files})
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+@app.route('/transactions', methods=['GET'])
+def transactions():
+    try:
+        # Find all CSV files in the upload folder
+        csv_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.csv')]
+        if not csv_files:
+            return jsonify({'error': 'No CSV files found'}), 404
+        # Get the most recently uploaded CSV file
+        latest_file = max(
+            [os.path.join(UPLOAD_FOLDER, f) for f in csv_files],
+            key=os.path.getctime
+        )
+        # Read the CSV file
+        df = pd.read_csv(latest_file)
+        # Replace NaN with None (which becomes null in JSON)
+        df = df.where(pd.notnull(df), None)
+        # Convert to list of dicts
+        transactions = df.to_dict(orient='records')
+        return jsonify({'transactions': transactions})
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 

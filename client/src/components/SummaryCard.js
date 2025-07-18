@@ -22,11 +22,11 @@ const SummaryCard = ({ transactions, startDate, endDate }) => {
     setFilteredTransactions(filtered);
 
     const income = filtered
-      .filter(tx => tx.Type === 'Credit')
+      .filter(tx => parseFloat(tx.Amount) > 0)
       .reduce((sum, tx) => sum + Math.abs(parseFloat(tx.Amount)), 0);
 
     const expenses = filtered
-      .filter(tx => tx.Type === 'Debit')
+      .filter(tx => parseFloat(tx.Amount) < 0)
       .reduce((sum, tx) => sum + Math.abs(parseFloat(tx.Amount)), 0);
 
     setTotals({

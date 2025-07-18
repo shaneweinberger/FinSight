@@ -10,7 +10,6 @@ const Overview = ({ transactions }) => {
     { key: 'Transaction Date', label: 'Transaction Date' },
     { key: 'Description', label: 'Description' },
     { key: 'Category', label: 'Category' },
-    { key: 'Type', label: 'Type' },
     { key: 'Amount', label: 'Amount' }
   ];
 

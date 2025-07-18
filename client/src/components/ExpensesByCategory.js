@@ -5,7 +5,6 @@ const ExpensesByCategory = ({ transactions, startDate, endDate, selectedCategory
   const filtered = React.useMemo(() => {
     if (!startDate || !endDate || !transactions.length) return [];
     return transactions.filter(tx => {
-      if (tx.Type !== 'Debit') return false;
       const txDate = new Date(tx['Transaction Date']);
       const start = new Date(startDate);
       const end = new Date(endDate);
