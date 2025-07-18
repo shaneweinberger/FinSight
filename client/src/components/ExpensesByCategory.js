@@ -39,6 +39,8 @@ const ExpensesByCategory = ({ transactions, startDate, endDate, selectedCategory
   };
 
   const categories = Object.keys(categoryStats.stats || {});
+  // Sort categories by percent of total decreasing
+  const sortedCategories = categories.sort((a, b) => (categoryStats.stats[b].percent - categoryStats.stats[a].percent));
 
   return (
     <div className="bg-white rounded-xl shadow p-4 mb-6 max-w-1/2 w-1/2 self-start">
@@ -56,7 +58,7 @@ const ExpensesByCategory = ({ transactions, startDate, endDate, selectedCategory
             </tr>
           </thead>
           <tbody>
-            {categories.map(cat => {
+            {sortedCategories.map(cat => {
               const isSelected = selectedCategory === cat;
               const isDimmed = selectedCategory && !isSelected;
               return (

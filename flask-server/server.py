@@ -9,7 +9,7 @@ app = Flask(__name__)
 CORS(app)
 
 # Configure upload folder
-UPLOAD_FOLDER = 'gold'
+UPLOAD_FOLDER = 'uploads'
 ALLOWED_EXTENSIONS = {'csv'}
 
 # Create uploads directory if it doesn't exist
@@ -22,10 +22,7 @@ def allowed_file(filename):
     return '.' in filename and \
            filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
-@app.route('/members')
-def members():
-    return {"members": ["Member1", "Member2", "Member3"]}
-
+# Endpoint to handle CSV file uploads. Validates and saves the file, then triggers ETL processing.
 @app.route('/upload-csv', methods=['POST'])
 def upload_csv():
     try:
@@ -73,37 +70,16 @@ def upload_csv():
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/uploaded-files', methods=['GET'])
-def get_uploaded_files():
-    try:
-        files = []
-        if os.path.exists(UPLOAD_FOLDER):
-            for filename in os.listdir(UPLOAD_FOLDER):
-                if filename.endswith('.csv'):
-                    filepath = os.path.join(UPLOAD_FOLDER, filename)
-                    file_size = os.path.getsize(filepath)
-                    files.append({
-                        'filename': filename,
-                        'size': file_size
-                    })
-        return jsonify({'files': files})
-    except Exception as e:
-        return jsonify({'error': f'Server error: {str(e)}'}), 500
-
+# Endpoint to return cleaned transaction data as JSON for the frontend.
 @app.route('/transactions', methods=['GET'])
 def transactions():
     try:
-        # Find all CSV files in the upload folder
-        csv_files = [f for f in os.listdir(UPLOAD_FOLDER) if f.endswith('.csv')]
-        if not csv_files:
-            return jsonify({'error': 'No CSV files found'}), 404
-        # Get the most recently uploaded CSV file
-        latest_file = max(
-            [os.path.join(UPLOAD_FOLDER, f) for f in csv_files],
-            key=os.path.getctime
-        )
-        # Read the CSV file
-        df = pd.read_csv(latest_file)
+        # Path to the cleaned CSV in gold
+        cleaned_csv_path = os.path.join(os.path.dirname(__file__), 'gold', 'cleaned_transactions.csv')
+        if not os.path.exists(cleaned_csv_path):
+            return jsonify({'error': 'No cleaned transactions file found'}), 404
+        # Read the cleaned CSV file
+        df = pd.read_csv(cleaned_csv_path)
         # Replace NaN with None (which becomes null in JSON)
         df = df.where(pd.notnull(df), None)
         # Convert to list of dicts
