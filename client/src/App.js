@@ -19,12 +19,26 @@ export default function App() {
   // Tab state
   const [activeTab, setActiveTab] = useState('Overview');
 
+  const fetchTransactions = async () => {
+    try {
+      console.log('fetchTransactions called - fetching from API...');
+      const response = await fetch('http://localhost:8000/transactions');
+      const data = await response.json();
+      console.log('Fetched data:', data);
+      if (data.transactions) {
+        console.log('Setting transactions:', data.transactions.length);
+        setTransactions(data.transactions);
+        console.log('Transactions updated in state');
+      } else {
+        console.log('No transactions in response');
+      }
+    } catch (err) {
+      console.error('Error fetching transactions:', err);
+    }
+  };
+
   useEffect(() => {
-    fetch('http://192.168.4.22:8000/transactions')
-      .then(res => res.json())
-      .then(data => {
-        if (data.transactions) setTransactions(data.transactions);
-      });
+    fetchTransactions();
   }, []);
 
   const handleCreditFileChange = (e) => {
@@ -47,10 +61,16 @@ export default function App() {
     formData.append('file', file);
     formData.append('type', type);
     try {
-      const response = await fetch('http://192.168.4.22:8000/upload-csv', {
+      const response = await fetch('http://localhost:8000/upload-csv', {
         method: 'POST',
         body: formData,
       });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const data = await response.json();
       if (data.message) {
         setUploadStatus('Upload successful!');
@@ -60,7 +80,8 @@ export default function App() {
         setUploadStatus(data.error || 'Upload failed.');
       }
     } catch (err) {
-      setUploadStatus('Upload failed.');
+      console.error('Upload error:', err);
+      setUploadStatus(`Upload failed: ${err.message}`);
     } finally {
       setIsUploading(false);
     }
@@ -152,7 +173,7 @@ export default function App() {
         </div>
         
         {activeTab === 'Overview' && <Overview transactions={transactions} />}
-        {activeTab === 'Analysis' && <MonthlyAnalysis transactions={transactions} />}
+        {activeTab === 'Analysis' && <MonthlyAnalysis transactions={transactions} onRefresh={fetchTransactions} />}
       </main>
     </div>
   );

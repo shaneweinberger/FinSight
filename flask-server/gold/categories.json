@@ -1,0 +1,21 @@
+{
+  "categories": [
+    "",
+    "Bills & Utilities",
+    "Entertainment",
+    "Food & Drink",
+    "Groceries",
+    "Health & Wellness",
+    "Home",
+    "Personal",
+    "Shopping",
+    "Travel",
+    "Uncategorized",
+    "Zelle"
+  ],
+  "metadata": {
+    "last_updated": "2025-10-25",
+    "total_categories": 12,
+    "source": "credit_transactions"
+  }
+}
