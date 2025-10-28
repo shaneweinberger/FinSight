@@ -135,10 +135,14 @@ def create_app():
                 print(f"Filtered updates: {filtered_updates}")
                 
                 if filtered_updates:
-                    validated_updates.append({
+                    validated_update = {
                         'id': update['id'],
                         'updates': filtered_updates
-                    })
+                    }
+                    # Also include transactionData if present (needed for content matching)
+                    if 'transactionData' in update:
+                        validated_update['transactionData'] = update['transactionData']
+                    validated_updates.append(validated_update)
             
             print(f"Validated updates: {validated_updates}")
             

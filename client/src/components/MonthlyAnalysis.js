@@ -280,20 +280,23 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
             {currentTransactions.map((tx, idx) => (
               <tr 
                 key={idx} 
-                className={`border-b last:border-b-0 hover:bg-gray-50 ${
-                  isEditMode ? 'bg-blue-50' : ''
+                className={`border-b last:border-b-0 hover:bg-gray-50 transition-colors ${
+                  isEditMode ? 'bg-amber-50/30' : ''
                 }`}
               >
                 {columns.map(col => {
                   const cellKey = `${startIndex + idx}-${col.key}`;
                   const isEditing = editingCell === cellKey;
                   const cellValue = getCellValue(tx, col.key, startIndex + idx);
+                  const hasPendingChange = pendingChanges[`${startIndex + idx}-${col.key}`];
                   
                   return (
                     <td 
                       key={col.key} 
-                      className={`py-3 px-4 ${
-                        col.editable && isEditMode ? 'cursor-pointer hover:bg-blue-100' : ''
+                      className={`py-3 px-4 relative transition-all ${
+                        col.editable && isEditMode 
+                          ? 'cursor-pointer group hover:bg-amber-50/50' 
+                          : ''
                       }`}
                       onClick={() => handleCellClick(startIndex + idx, col.key)}
                     >
@@ -303,7 +306,7 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
                             value={cellValue}
                             onChange={(e) => handleCellChange(startIndex + idx, col.key, e.target.value)}
                             onBlur={handleCellBlur}
-                            className="w-full p-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
                             autoFocus
                           >
                             {categories.map(category => (
@@ -323,14 +326,24 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
                                 handleCellBlur();
                               }
                             }}
-                            className="w-full p-1 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
                             autoFocus
                           />
                         )
                       ) : (
-                        <span className={col.editable && isEditMode ? 'text-blue-600' : ''}>
+                        <span className="flex items-center gap-1">
                           {cellValue}
+                          {col.editable && isEditMode && !isEditing && (
+                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs">
+                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                              </svg>
+                            </span>
+                          )}
                         </span>
+                      )}
+                      {hasPendingChange && (
+                        <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
                       )}
                     </td>
                   );

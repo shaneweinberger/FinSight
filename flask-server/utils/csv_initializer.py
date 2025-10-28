@@ -157,10 +157,11 @@ def bulk_update_transactions_in_file(file_path: Path, updates: list) -> bool:
     Returns True if successful, False otherwise.
     """
     try:
-        # Read the CSV file
+        # Read the CSV file once
         df = pd.read_csv(file_path)
+        print(f"Reading CSV file: {file_path}, shape: {df.shape}")
         
-        # Apply all updates
+        # Apply all updates to the in-memory DataFrame
         for update_item in updates:
             transaction_id = update_item.get('id')
             transaction_data = update_item.get('transactionData', {})
@@ -170,25 +171,75 @@ def bulk_update_transactions_in_file(file_path: Path, updates: list) -> bool:
             print(f"Transaction data: {transaction_data}")
             print(f"Updates: {updates_dict}")
             
-            # Try to find the transaction by content first
+            # Find the row index by matching content
+            idx = None
+            found_by_match = False
+            
             if transaction_data:
-                success = update_transaction_by_content(file_path, transaction_data, updates_dict)
-                if success:
-                    continue
+                # Match on available fields
+                mask = pd.Series([True] * len(df))
+                matching_fields = []
+                
+                if 'Transaction Date' in transaction_data and transaction_data['Transaction Date']:
+                    mask &= (df['Transaction Date'] == transaction_data['Transaction Date'])
+                    matching_fields.append('Transaction Date')
+                if 'Description' in transaction_data and transaction_data['Description']:
+                    mask &= (df['Description'] == transaction_data['Description'])
+                    matching_fields.append('Description')
+                if 'Amount' in transaction_data and transaction_data['Amount']:
+                    mask &= (df['Amount'] == transaction_data['Amount'])
+                    matching_fields.append('Amount')
+                
+                matching_rows = df[mask]
+                
+                if len(matching_rows) == 1:
+                    idx = matching_rows.index[0]
+                    found_by_match = True
+                    print(f"Found transaction at index {idx} by content match on fields: {matching_fields}")
+                elif len(matching_rows) > 1:
+                    print(f"WARNING: Multiple matching transactions found ({len(matching_rows)} rows). Fields: {matching_fields}")
+                    # Use the first match anyway
+                    idx = matching_rows.index[0]
+                    found_by_match = True
+                    print(f"Using first matching transaction at index {idx}")
+                elif len(matching_rows) == 0:
+                    print(f"WARNING: No matching transaction found. Fields: {matching_fields}")
+                    print(f"Transaction data was: {transaction_data}")
             
             # Fallback to index-based update
-            if transaction_id and transaction_id.isdigit():
+            if idx is None and transaction_id and transaction_id.isdigit():
                 idx = int(transaction_id)
                 if 0 <= idx < len(df):
-                    for field, value in updates_dict.items():
-                        if field in df.columns:
-                            df.at[idx, field] = value
-                            print(f"Updated {field} to {value} at index {idx}")
+                    print(f"Using transaction ID as index: {idx}")
+                else:
+                    print(f"Index {idx} out of range for DataFrame of length {len(df)}")
+                    idx = None
+            
+            # Skip if we couldn't find a valid index
+            if idx is None:
+                print(f"Could not determine row index for transaction. Skipping this update.")
+                continue
+            
+            # Apply updates to the DataFrame
+            print(f"Before update - Row {idx}: {df.iloc[idx].to_dict()}")
+            
+            for field, value in updates_dict.items():
+                if field in df.columns:
+                    df.at[idx, field] = value
+                    print(f"Updated {field} to {value} at index {idx}")
+                else:
+                    print(f"Field {field} not found in columns: {list(df.columns)}")
+            
+            print(f"After update - Row {idx}: {df.iloc[idx].to_dict()}")
         
-        # Write back to file
+        # Write back to file once with all updates
+        print(f"Writing updated DataFrame to {file_path}")
         df.to_csv(file_path, index=False)
+        print(f"Successfully saved all updates to {file_path}")
         return True
         
     except Exception as e:
         print(f"Error bulk updating transactions in {file_path}: {e}")
+        import traceback
+        traceback.print_exc()
         return False

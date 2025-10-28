@@ -174,16 +174,26 @@ class TransactionService:
             if updated_files['merged'].exists() and updated_files['merged'].stat().st_size > 0:
                 return bulk_update_transactions_in_file(updated_files['merged'], updates)
             
-            # If no merged file or it's empty, we need to determine which individual file to update
-            # For now, we'll try both credit and debit files
-            success = False
-            if updated_files['credit'].exists():
-                success = bulk_update_transactions_in_file(updated_files['credit'], updates)
-            if not success and updated_files['debit'].exists():
-                success = bulk_update_transactions_in_file(updated_files['debit'], updates)
+            # If no merged file or it's empty, try both credit and debit files
+            # Different transactions may be in different files, so we need to update all files
+            # The bulk_update_transactions_in_file function will only update transactions that exist in each file
+            credit_success = False
+            debit_success = False
             
-            return success
+            if updated_files['credit'].exists():
+                print(f"Attempting to update transactions in credit file: {updated_files['credit']}")
+                credit_success = bulk_update_transactions_in_file(updated_files['credit'], updates)
+            
+            if updated_files['debit'].exists():
+                print(f"Attempting to update transactions in debit file: {updated_files['debit']}")
+                debit_success = bulk_update_transactions_in_file(updated_files['debit'], updates)
+            
+            # Consider it successful if at least one file was updated (or if files processed updates)
+            # Both files may have been updated since transactions are distributed across them
+            return credit_success or debit_success
             
         except Exception as e:
             print(f"Error bulk updating transactions: {e}")
+            import traceback
+            traceback.print_exc()
             return False
