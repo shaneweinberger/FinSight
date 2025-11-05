@@ -1,4 +1,4 @@
-# CSV File Upload Application
+# FINSIGHT - AI Personal Financial Analytics 
 
 A simple web application that allows users to upload CSV files through a React frontend to a Flask backend.
 
