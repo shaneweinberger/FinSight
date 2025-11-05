@@ -1,28 +1,36 @@
-Transaction Date,Description,Category,Amount
-06/30/2025,INTEREST CREDIT,Uncategorized,-0.32
-07/02/2025,UWO-TUITION  Q3H8U9,Uncategorized,2000.0
-07/09/2025,SEND E-TFR ***U7k,Uncategorized,1020.0
-07/15/2025,E-TRANSFER ***KGv,Uncategorized,-850.0
-07/17/2025,SEND E-TFR ***pDF,Uncategorized,1600.0
-07/31/2025,INTEREST CREDIT,Uncategorized,-0.3
-08/08/2025,SEND E-TFR ***FdY,Uncategorized,1020.0
-08/15/2025,UWO-TUITION  R9K5K4,Uncategorized,16762.02
-08/19/2025,E-TRANSFER ***97V,Uncategorized,-140.0
-08/28/2025,TD ATM W/D    008626,Uncategorized,50.0
-08/29/2025,INTEREST CREDIT,Uncategorized,-0.21
-09/02/2025,SEND E-TFR ***PhT,Uncategorized,2.0
-09/08/2025,SEND E-TFR ***ZKF,Uncategorized,1020.0
-09/16/2025,SEND E-TFR ***ufK,Uncategorized,25.0
-09/16/2025,E-TRANSFER ***JyS,Uncategorized,-420.0
-09/18/2025,SEND E-TFR ***pHb,Uncategorized,25.0
-09/22/2025,E-TRANSFER ***EQQ,Uncategorized,-55.0
-09/29/2025,INTEREST CREDIT,Uncategorized,-0.12
-10/01/2025,SEND E-TFR ***U6Z,Uncategorized,1020.0
-10/06/2025,SEND E-TFR ***9Cv,Uncategorized,206.0
-10/06/2025,SEND E-TFR ***Fe4,Uncategorized,42.0
-10/06/2025,E-TRANSFER ***KAG,Uncategorized,-100.0
-10/06/2025,SEND E-TFR ***afY,Uncategorized,28.25
-10/07/2025,SEND E-TFR ***s3G,Uncategorized,250.0
-10/14/2025,SEND E-TFR ***Etr,Uncategorized,300.0
-10/16/2025,E-TRANSFER ***qYW,Uncategorized,-100.0
-10/16/2025,SEND E-TFR ***RUB,Uncategorized,208.0
+Transaction ID,Transaction Date,Description,Category,Amount
+2deff950-4c1a-4923-9dcb-41e7d725867f,06/30/2025,INTEREST CREDIT,Uncategorized,-0.32
+57f83184-cb29-4e0d-8f78-0a9ee94801c3,07/02/2025,UWO-TUITION  Q3H8U9,Uncategorized,2000.0
+ef619e57-6dec-4831-b834-83a577b008e1,07/09/2025,SEND E-TFR ***U7k,Uncategorized,1020.0
+5c71f43c-32ae-4068-954f-ef54242171a4,07/15/2025,E-TRANSFER ***KGv,Uncategorized,-850.0
+a6031094-9d59-4aee-938f-a2db35079af3,07/17/2025,SEND E-TFR ***pDF,Uncategorized,1600.0
+15d19649-22c6-43f4-a5e1-b42537b2dbbe,07/31/2025,INTEREST CREDIT,Uncategorized,-0.3
+f537ec9f-33bc-40dd-b3b2-c5676e306fde,08/08/2025,SEND E-TFR ***FdY,Uncategorized,1020.0
+7e3210a4-a700-4f45-b797-cd29c7707a9c,08/15/2025,UWO-TUITION  R9K5K4,Uncategorized,16762.02
+8523d435-bd1d-4abc-ad21-229e81abb61a,08/19/2025,E-TRANSFER ***97V,Uncategorized,-140.0
+879eb991-9b42-4491-a479-74c1bddee8d8,08/28/2025,TD ATM W/D    008626,Uncategorized,50.0
+f577a66c-7dd4-4ae3-a149-442153fcbe1d,08/29/2025,INTEREST CREDIT,Uncategorized,-0.21
+9d88b349-506d-4526-85d7-2b4fb2eccccc,09/02/2025,SEND E-TFR ***PhT,Uncategorized,2.0
+bbb3d21b-11ea-4ef1-952a-9c100bae2809,09/08/2025,SEND E-TFR ***ZKF,Uncategorized,1020.0
+f4170ee7-1692-42b2-8fef-0bbb3574bcc9,09/16/2025,SEND E-TFR ***ufK,Uncategorized,25.0
+f05102e4-ae9c-4ea4-a5e7-ada85da9195f,09/16/2025,E-TRANSFER ***JyS,Uncategorized,-420.0
+fa299229-042c-453e-99f8-9b6a0215442f,09/18/2025,SEND E-TFR ***pHb,Uncategorized,25.0
+46328499-b570-4aa2-9184-60945dc53bac,09/22/2025,E-TRANSFER ***EQQ,Uncategorized,-55.0
+751cc1a1-c250-484a-bea8-095465e2ab8b,09/29/2025,INTEREST CREDIT,Uncategorized,-0.12
+39fddc1b-c443-461e-a3ba-4b000cbbd80d,10/01/2025,SEND E-TFR ***U6Z,Uncategorized,1020.0
+ec27737e-ffde-4793-b468-186ce9a484bf,10/06/2025,SEND E-TFR ***9Cv,Uncategorized,206.0
+ce79414d-c801-4071-8513-876e717f9d86,10/06/2025,SEND E-TFR ***Fe4,Uncategorized,42.0
+33e70ce6-a3fd-41b6-92d8-336c4e10362d,10/06/2025,E-TRANSFER ***KAG,Uncategorized,-100.0
+05b01fb8-e676-466c-9d26-94bcf8cd5e49,10/06/2025,SEND E-TFR ***afY,Uncategorized,28.25
+1ce4c67c-f0e7-42fe-bd4a-547203af4ff1,10/07/2025,SEND E-TFR ***s3G,Uncategorized,250.0
+eff78c45-87d5-44b3-ac92-581fe15b753c,10/14/2025,SEND E-TFR ***Etr,Uncategorized,300.0
+2e315634-5852-4712-b81f-bf15e0f3fd26,10/16/2025,E-TRANSFER ***qYW,Uncategorized,-100.0
+bf769315-405d-4fbb-9f94-099c9a99b2ab,10/16/2025,SEND E-TFR ***RUB,Uncategorized,208.0
+7f45b300-bc82-4225-b0b3-0e01cc03e50b,10/27/2025,E-TRANSFER ***XFe,Uncategorized,-40.0
+6fa20e21-c5bb-4800-b6a3-acb5e5f6af7e,10/27/2025,SEND E-TFR ***4uD,Uncategorized,7.46
+93aa37fc-7dd2-48f9-8a43-7214d5bdceb7,10/27/2025,E-TRANSFER ***y4h,Uncategorized,-74.76
+bf756887-1937-495b-bd18-ca302eeb8c5b,10/31/2025,SEND E-TFR ***rjU,Uncategorized,62.7
+35200f02-fda9-44b9-93e5-9e657b915720,10/31/2025,SEND E-TFR ***7Uj,Uncategorized,1020.0
+0a5b30b6-07e4-490e-bfa2-b3fe28e13075,10/31/2025,INTEREST CREDIT,Uncategorized,-0.1
+aaf2d3bf-103e-492f-a89f-9a6cf357620c,11/03/2025,SEND E-TFR ***PxG,Uncategorized,140.0
+ebe4fba8-cd0e-4c1a-bda5-6dd913e21ad2,11/04/2025,SEND E-TFR ***Ef8,Uncategorized,150.87

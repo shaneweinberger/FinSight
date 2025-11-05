@@ -51,6 +51,41 @@ def create_app():
         except Exception as e:
             return jsonify({'error': f'Server error: {str(e)}'}), 500
     
+    @app.route('/uploaded-files/<upload_type>', methods=['GET'])
+    def list_uploaded_files(upload_type):
+        """List all uploaded files for a given type."""
+        try:
+            result = upload_service.list_uploaded_files(upload_type)
+            if 'error' in result:
+                return jsonify(result), 400
+            return jsonify(result)
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+    
+    @app.route('/uploaded-files/<upload_type>/<filename>', methods=['DELETE'])
+    def delete_uploaded_file(upload_type, filename):
+        """Delete an uploaded file."""
+        try:
+            success, message = upload_service.delete_uploaded_file(upload_type, filename)
+            if success:
+                return jsonify({'message': message})
+            else:
+                return jsonify({'error': message}), 400
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+    
+    @app.route('/reprocess/<upload_type>', methods=['POST'])
+    def reprocess_files(upload_type):
+        """Re-process all uploaded files for a given type."""
+        try:
+            success, message = upload_service.reprocess_all_files(upload_type)
+            if success:
+                return jsonify({'message': message})
+            else:
+                return jsonify({'error': message}), 400
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+    
     @app.route('/transactions', methods=['GET'])
     def get_transactions():
         """Get all transactions."""

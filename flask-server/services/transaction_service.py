@@ -32,25 +32,60 @@ class TransactionService:
             # Get updated file paths (fallback to original if updated don't exist)
             updated_files = get_updated_file_paths()
             
-            # Try to get merged data first
-            if updated_files['merged'].exists() and updated_files['merged'].stat().st_size > 0:
-                df = pd.read_csv(updated_files['merged'])
-            else:
-                # Combine individual files
-                all_dfs = []
+            # Process individual files first to ensure IDs are generated and saved
+            all_dfs = []
+            
+            # Process credit file
+            if updated_files['credit'].exists():
+                credit_df = pd.read_csv(updated_files['credit'])
+                if 'Transaction ID' not in credit_df.columns:
+                    credit_df['Transaction ID'] = None
                 
-                if updated_files['credit'].exists():
-                    credit_df = pd.read_csv(updated_files['credit'])
-                    all_dfs.append(credit_df)
+                # Generate IDs for rows missing them
+                import uuid
+                needs_credit_save = False
+                for idx in credit_df.index:
+                    tx_id = credit_df.at[idx, 'Transaction ID']
+                    if pd.isna(tx_id) or (isinstance(tx_id, str) and tx_id.strip() == ''):
+                        credit_df.at[idx, 'Transaction ID'] = str(uuid.uuid4())
+                        needs_credit_save = True
                 
-                if updated_files['debit'].exists():
-                    debit_df = pd.read_csv(updated_files['debit'])
-                    all_dfs.append(debit_df)
+                if needs_credit_save:
+                    cols = ['Transaction ID'] + [col for col in credit_df.columns if col != 'Transaction ID']
+                    credit_df = credit_df[cols]
+                    credit_df.to_csv(updated_files['credit'], index=False)
+                    print(f"Generated and saved Transaction IDs to credit file")
                 
-                if not all_dfs:
-                    return []
+                all_dfs.append(credit_df)
+            
+            # Process debit file
+            if updated_files['debit'].exists():
+                debit_df = pd.read_csv(updated_files['debit'])
+                if 'Transaction ID' not in debit_df.columns:
+                    debit_df['Transaction ID'] = None
                 
-                df = pd.concat(all_dfs, ignore_index=True)
+                # Generate IDs for rows missing them
+                import uuid
+                needs_debit_save = False
+                for idx in debit_df.index:
+                    tx_id = debit_df.at[idx, 'Transaction ID']
+                    if pd.isna(tx_id) or (isinstance(tx_id, str) and tx_id.strip() == ''):
+                        debit_df.at[idx, 'Transaction ID'] = str(uuid.uuid4())
+                        needs_debit_save = True
+                
+                if needs_debit_save:
+                    cols = ['Transaction ID'] + [col for col in debit_df.columns if col != 'Transaction ID']
+                    debit_df = debit_df[cols]
+                    debit_df.to_csv(updated_files['debit'], index=False)
+                    print(f"Generated and saved Transaction IDs to debit file")
+                
+                all_dfs.append(debit_df)
+            
+            if not all_dfs:
+                return []
+            
+            # Combine the processed dataframes
+            df = pd.concat(all_dfs, ignore_index=True)
             
             # Clean and convert to Transaction objects
             transactions = self._dataframe_to_transactions(df)
@@ -84,6 +119,10 @@ class TransactionService:
         
         # Clean NaN values
         df = df.where(pd.notnull(df), None)
+        
+        # Ensure Transaction ID column exists - generate IDs for rows that don't have them
+        if 'Transaction ID' not in df.columns:
+            df['Transaction ID'] = None
         
         for _, row in df.iterrows():
             try:

@@ -14,8 +14,8 @@ const SummaryCard = ({ transactions, startDate, endDate }) => {
 
     const filtered = transactions.filter(tx => {
       const txDate = new Date(tx['Transaction Date']);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T23:59:59'); // End of day to include all transactions
       return txDate >= start && txDate <= end;
     });
 

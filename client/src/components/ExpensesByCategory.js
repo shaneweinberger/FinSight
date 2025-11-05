@@ -6,29 +6,49 @@ const ExpensesByCategory = ({ transactions, startDate, endDate, selectedCategory
     if (!startDate || !endDate || !transactions.length) return [];
     return transactions.filter(tx => {
       const txDate = new Date(tx['Transaction Date']);
-      const start = new Date(startDate);
-      const end = new Date(endDate);
+      const start = new Date(startDate + 'T00:00:00');
+      const end = new Date(endDate + 'T23:59:59'); // End of day to include all transactions
       return txDate >= start && txDate <= end;
     });
   }, [transactions, startDate, endDate]);
 
-  // Group by category
+  // Group by category - simple sum of all amounts by category
   const categoryStats = React.useMemo(() => {
     const stats = {};
-    let total = 0;
+    const DEBUG = true; // Set to true to enable debug logging
+    
+    // Sum amounts by category (including sign)
     filtered.forEach(tx => {
-      const cat = tx.Category || 'Uncategorized';
-      const amt = Math.abs(parseFloat(tx.Amount));
-      if (!stats[cat]) stats[cat] = { count: 0, total: 0 };
+      const cat = tx.Category;
+      const amt = parseFloat(tx.Amount) || 0;
+      
+      if (!stats[cat]) {
+        stats[cat] = { count: 0, total: 0 };
+      }
+      
       stats[cat].count += 1;
-      stats[cat].total += amt;
-      total += amt;
+      stats[cat].total += amt; // Sum includes sign (negative reduces total)
+      
+      // Debug Food & Drink only
+      if (DEBUG && cat === 'Food & Drink') {
+        console.log('Food & Drink:', tx.Description, '=', amt, '| Running total:', stats[cat].total);
+      }
+
+      // Debug Uncategorized only
+      if (DEBUG && cat === 'Uncategorized') {
+        console.log('Uncategorized:', tx.Description, '=', amt, '| Running total:', stats[cat].total);
+      }
     });
-    // Calculate percent
-    Object.keys(stats).forEach(cat => {
-      stats[cat].percent = total > 0 ? (stats[cat].total / total) * 100 : 0;
-    });
-    return { stats, total };
+    
+    if (DEBUG && stats['Food & Drink']) {
+      console.log('FINAL Food & Drink total:', stats['Food & Drink'].total);
+    }
+
+    if (DEBUG && stats['Uncategorized']) {
+      console.log('FINAL Uncategorized total:', stats['Uncategorized'].total);
+    }
+    
+    return { stats, total: 0 };
   }, [filtered]);
 
   const formatCurrency = (amount) => {
@@ -39,7 +59,16 @@ const ExpensesByCategory = ({ transactions, startDate, endDate, selectedCategory
   };
 
   const categories = Object.keys(categoryStats.stats || {});
-  // Sort categories by percent of total decreasing
+  // Calculate percentages based on absolute totals
+  let totalAbsolute = 0;
+  categories.forEach(cat => {
+    totalAbsolute += Math.abs(categoryStats.stats[cat].total);
+  });
+  categories.forEach(cat => {
+    categoryStats.stats[cat].percent = totalAbsolute > 0 
+      ? (Math.abs(categoryStats.stats[cat].total) / totalAbsolute) * 100 
+      : 0;
+  });
   const sortedCategories = categories.sort((a, b) => (categoryStats.stats[b].percent - categoryStats.stats[a].percent));
 
   return (

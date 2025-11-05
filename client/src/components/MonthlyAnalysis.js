@@ -1,14 +1,22 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import SummaryCard from './SummaryCard';
 import TimeFilter from './TimeFilter';
 import Pagination from './Pagination';
 import ExpensesByCategory from './ExpensesByCategory';
 
+// Helper function to sort transactions by date (newest first)
+const sortTransactionsByDate = (txs) => {
+  return [...txs].sort((a, b) => {
+    const dateA = new Date(a['Transaction Date']);
+    const dateB = new Date(b['Transaction Date']);
+    return dateB - dateA; // Newest first
+  });
+};
+
 const MonthlyAnalysis = ({ transactions, onRefresh }) => {
-  console.log('MonthlyAnalysis received transactions:', transactions?.length || 0);
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
-  const [filteredTransactions, setFilteredTransactions] = useState(transactions);
+  const [filteredTransactions, setFilteredTransactions] = useState(sortTransactionsByDate(transactions));
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [selectedCategory, setSelectedCategory] = useState(null);
   
@@ -40,20 +48,7 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     fetchCategories();
   }, []);
 
-  // Helper function to sort transactions by date (newest first)
-  const sortTransactionsByDate = (txs) => {
-    return [...txs].sort((a, b) => {
-      const dateA = new Date(a['Transaction Date']);
-      const dateB = new Date(b['Transaction Date']);
-      return dateB - dateA; // Newest first
-    });
-  };
-
-  // Update filtered transactions when props change
-  React.useEffect(() => {
-    const sortedTransactions = sortTransactionsByDate(transactions);
-    setFilteredTransactions(sortedTransactions);
-  }, [transactions]);
+  // TimeFilter will handle updating filteredTransactions when transactions change
 
   // Pagination calculations based on filtered transactions
   const totalPages = Math.ceil(filteredTransactions.length / pageSize);
@@ -70,21 +65,21 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     setCurrentPage(1);
   };
 
-  const handleFilterChange = (filtered) => {
+  const handleFilterChange = useCallback((filtered) => {
     const sortedFiltered = sortTransactionsByDate(filtered);
     setFilteredTransactions(sortedFiltered);
     setCurrentPage(1); // Reset to first page when filtering
-  };
+  }, []);
 
-  const handlePeriodChange = ({ startDate, endDate }) => {
+  const handlePeriodChange = useCallback(({ startDate, endDate }) => {
     setDateRange({ startDate, endDate });
-  };
+  }, []);
 
   // Edit mode functions
-  const handleEditModeToggle = () => {
+  const handleEditModeToggle = async () => {
     if (isEditMode && Object.keys(pendingChanges).length > 0) {
       // Save pending changes before exiting edit mode
-      saveChanges();
+      await saveChanges();
     } else {
       const newEditMode = !isEditMode;
       setIsEditMode(newEditMode);
@@ -133,10 +128,14 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     setIsSaving(true);
     try {
       const updates = Object.values(pendingChanges).map(change => {
-        // Get the original transaction data to help backend find the right row
+        // Get the original transaction data
         const originalTransaction = filteredTransactions[change.transactionIndex];
+        
+        // Use Transaction ID if available, otherwise fall back to transaction data
+        const transactionId = originalTransaction['Transaction ID'] || originalTransaction['transaction_id'];
+        
         return {
-          id: change.transactionIndex.toString(),
+          id: transactionId || change.transactionIndex.toString(), // Use Transaction ID if available
           transactionData: {
             'Transaction Date': originalTransaction['Transaction Date'],
             'Description': originalTransaction['Description'],
@@ -161,18 +160,9 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
         setEditingCell(null);
         setIsEditMode(false);
         // Refresh the transaction data
-        console.log('About to refresh data...');
         if (onRefresh) {
-          console.log('Calling onRefresh...');
           await onRefresh();
-          console.log('onRefresh completed');
-        } else {
-          console.log('onRefresh is not available');
         }
-        
-        // Force a page reload to ensure we get the latest data
-        console.log('Forcing page reload...');
-        window.location.reload();
       } else {
         const error = await response.json();
         console.error('Error saving changes:', error);
@@ -191,9 +181,6 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     const pendingChange = pendingChanges[cellKey];
     return pendingChange ? pendingChange.value : transaction[columnKey];
   };
-
-  // Debug: Show transaction count
-  console.log('MonthlyAnalysis render - transactions:', transactions?.length || 0, 'filtered:', filteredTransactions?.length || 0);
 
   return (
     <div>
@@ -233,37 +220,26 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
         <div className="flex gap-2">
           <button 
             onClick={handleEditModeToggle}
-            className={`px-3 py-2 rounded-lg text-sm font-medium ${
+            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
               isEditMode 
-                ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm' 
+                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
             }`}
             disabled={isSaving}
           >
             {isSaving ? 'Saving...' : isEditMode ? 'Save & Exit Edit' : 'Edit'}
           </button>
           {isEditMode && (
-            <>
-              {Object.keys(pendingChanges).length > 0 && (
-                <button 
-                  onClick={saveChanges}
-                  className="px-3 py-2 rounded-lg bg-green-500 text-white text-sm hover:bg-green-600"
-                  disabled={isSaving}
-                >
-                  {isSaving ? 'Saving...' : 'Save Changes'}
-                </button>
-              )}
-              <button 
-                onClick={handleCancelEdit}
-                className="px-3 py-2 rounded-lg bg-red-500 text-white text-sm hover:bg-red-600"
-                disabled={isSaving}
-              >
-                Cancel
-              </button>
-            </>
+            <button 
+              onClick={handleCancelEdit}
+              className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all"
+              disabled={isSaving}
+            >
+              Cancel
+            </button>
           )}
-          <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Filter</button>
-          <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Export</button>
+          <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Filter</button>
+          <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Export</button>
         </div>
       </div>
       

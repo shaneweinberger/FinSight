@@ -3,6 +3,7 @@ import re
 import pandas as pd
 import json
 from datetime import datetime
+from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -54,7 +55,18 @@ columns_to_keep_with_category = COLUMNS_TO_KEEP + ['Category']
 missing_cols = [col for col in columns_to_keep_with_category if col not in df.columns]
 if missing_cols:
     raise ValueError(f"Missing columns in CSV: {missing_cols}")
-cleaned_df = df[columns_to_keep_with_category]
+cleaned_df = df[columns_to_keep_with_category].copy()
+
+# Filter out transactions with empty/missing amounts
+print(f"Before filtering empty amounts: {len(cleaned_df)} transactions")
+cleaned_df['Amount'] = pd.to_numeric(cleaned_df['Amount'], errors='coerce')
+cleaned_df = cleaned_df.dropna(subset=['Amount'])
+print(f"After filtering empty amounts: {len(cleaned_df)} transactions")
+
+# Filter out payment transactions (typically have empty amounts or are balance adjustments)
+# These are usually account payments, not actual spending transactions
+cleaned_df = cleaned_df[~cleaned_df['Description'].str.contains('PAYMENT', case=False, na=False)]
+print(f"After filtering payment transactions: {len(cleaned_df)} transactions")
 
 # Load existing categories for Gemini
 with open(CATEGORIES_FILE, 'r') as f:
@@ -144,7 +156,22 @@ with open(CATEGORIES_FILE, 'w') as f:
 
 print(f"Updated categories: {len(new_categories)} new categories found")
 
-# Save the cleaned DataFrame to the gold folder
+# Merge with existing transactions
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.merge_utils import merge_transactions
+
 output_path = os.path.join(GOLD_DIR, 'credit_cleaned.csv')
-cleaned_df.to_csv(output_path, index=False)
-print(f"Cleaned CSV saved to: {output_path}")
+existing_path = Path(output_path)
+
+merged_df, new_count, duplicate_count = merge_transactions(
+    cleaned_df,
+    existing_path,
+    transaction_type='credit'
+)
+
+# Save the merged DataFrame to the gold folder
+merged_df.to_csv(output_path, index=False)
+print(f"Merged CSV saved to: {output_path}")
+print(f"Summary: {new_count} new transactions added, {duplicate_count} duplicates skipped")
+print(f"Total transactions: {len(merged_df)}")

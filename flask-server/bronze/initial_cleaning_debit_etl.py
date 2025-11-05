@@ -2,6 +2,7 @@ import os
 import re
 import pandas as pd
 import json
+from pathlib import Path
 from dotenv import load_dotenv
 import google.generativeai as genai
 
@@ -86,7 +87,35 @@ df['Category'] = 'Uncategorized'
 
 # Reorder
 df = df[['Transaction Date', 'Description', 'Category', 'Amount']]
+
+# Filter out transactions with empty/missing amounts
+print(f"Before filtering empty amounts: {len(df)} transactions")
+df['Amount'] = pd.to_numeric(df['Amount'], errors='coerce')
+df = df.dropna(subset=['Amount'])
+print(f"After filtering empty amounts: {len(df)} transactions")
+
+# Filter out payment transactions
+df = df[~df['Description'].str.contains('PAYMENT', case=False, na=False)]
+print(f"After filtering payment transactions: {len(df)} transactions")
+
 print(df.head())
 
-# Export cleaned file to gold directory
-df.to_csv(os.path.join(GOLD_DIR, 'debit_cleaned.csv'), index=False)
+# Merge with existing transactions
+import sys
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+from utils.merge_utils import merge_transactions
+
+output_path = os.path.join(GOLD_DIR, 'debit_cleaned.csv')
+existing_path = Path(output_path)
+
+merged_df, new_count, duplicate_count = merge_transactions(
+    df,
+    existing_path,
+    transaction_type='debit'
+)
+
+# Save the merged DataFrame to the gold directory
+merged_df.to_csv(output_path, index=False)
+print(f"Merged CSV saved to: {output_path}")
+print(f"Summary: {new_count} new transactions added, {duplicate_count} duplicates skipped")
+print(f"Total transactions: {len(merged_df)}")

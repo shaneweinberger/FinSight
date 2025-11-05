@@ -1,28 +1,36 @@
-Transaction Date,Description,Category,Amount
-06/30/2025,INTEREST CREDIT,Uncategorized,-0.32
-07/02/2025,UWO-TUITION  Q3H8U9,Uncategorized,2000.0
-07/09/2025,Juniper Café - Lunch with Emma,Uncategorized,1020.0
-07/15/2025,E-TRANSFER ***KGv,Uncategorized,-850.0
-07/17/2025,SEND E-TFR ***pDF,Uncategorized,1600.0
-07/31/2025,INTEREST CREDIT,Uncategorized,-0.3
-08/08/2025,SEND E-TFR ***FdY,Uncategorized,1020.0
-08/15/2025,UWO-TUITION  R9K5K4,Uncategorized,16762.02
-08/19/2025,Lunch at Ivey,Food & Drink,-140.0
-08/28/2025,TD ATM W/D    008626,Uncategorized,50.0
-08/29/2025,INTEREST CREDIT,Uncategorized,-0.21
-09/02/2025,SEND E-TFR ***PhT,Uncategorized,2.0
-09/08/2025,SEND E-TFR ***ZKF,Uncategorized,1020.0
-09/16/2025,SEND E-TFR ***ufK,Uncategorized,25.0
-09/16/2025,E-TRANSFER ***JyS,Uncategorized,-420.0
-09/18/2025,SEND E-TFR ***pHb,Uncategorized,25.0
-09/22/2025,E-TRANSFER ***EQQ,Uncategorized,-55.0
-09/29/2025,INTEREST CREDIT - updated -0.12,Uncategorized,-0.12
-10/01/2025,rent oct manual,Uncategorized,1020.0
-10/06/2025,SEND E-TFR ***9Cv,Uncategorized,206.0
-10/06/2025,SEND E-TFR ***Fe4,Uncategorized,42.0
-10/06/2025,E-TRANSFER ***KAG,Uncategorized,-100.0
-10/06/2025,SEND E-TFR ***afY,Uncategorized,28.25
-10/07/2025,SEND E-TFR ***s3G,Uncategorized,250.0
-10/14/2025,SEND E-TFR ***Etr,Uncategorized,300.0
-10/16/2025,test update,Uncategorized,-100.0
-10/16/2025,SEND E-TFR ***RUB,Uncategorized,208.0
+Transaction ID,Transaction Date,Description,Category,Amount
+50241be5-b491-4f63-a3c1-f2023c014fb0,06/30/2025,INTEREST CREDIT,Uncategorized,-0.32
+ce48e532-05f2-4f05-a4c0-d72be592857c,07/02/2025,UWO-TUITION  Q3H8U9,Uncategorized,2000.0
+1a7aa6d4-f4d8-4413-8855-eef43c84d89c,07/09/2025,SEND E-TFR ***U7k,Uncategorized,1020.0
+b0425864-33b6-4e5b-b830-acfacf82fabf,07/15/2025,E-TRANSFER ***KGv,Uncategorized,-850.0
+b8617600-d76d-4e58-9152-cb3feab29d2c,07/17/2025,SEND E-TFR ***pDF,Uncategorized,1600.0
+4f60ff68-2d2a-402f-8589-096afcf1e0b6,07/31/2025,INTEREST CREDIT,Uncategorized,-0.3
+03fddf98-11ed-480c-893a-29c1fbec3943,08/08/2025,SEND E-TFR ***FdY,Uncategorized,1020.0
+016dca25-8c59-4fdc-923b-31bcc07a1a04,08/15/2025,UWO-TUITION  R9K5K4,Uncategorized,16762.02
+68c3293a-4501-4435-9e24-8c973a3a93ff,08/19/2025,E-TRANSFER ***97V,Uncategorized,-140.0
+1a0c34f6-0465-4f6b-928e-5299a7da4a0f,08/28/2025,TD ATM W/D    008626,Uncategorized,50.0
+d2d102dc-846c-4f65-8a35-ee5040960a1c,08/29/2025,INTEREST CREDIT,Uncategorized,-0.21
+82829d94-1e45-4143-a7a8-9e4ea3772a5d,09/02/2025,SEND E-TFR ***PhT,Uncategorized,2.0
+af382864-869b-4d9c-abf3-8fc628ce0c4a,09/08/2025,SEND E-TFR ***ZKF,Uncategorized,1020.0
+baf91819-d675-4a82-87b9-b34550418170,09/16/2025,SEND E-TFR ***ufK,Uncategorized,25.0
+5b602d34-48e0-447c-85b9-dc05479c8884,09/16/2025,E-TRANSFER ***JyS,Uncategorized,-420.0
+3427c626-d5fb-43fe-aa2e-df39ed1b2049,09/18/2025,SEND E-TFR ***pHb,Uncategorized,25.0
+e2c44ec4-d8ed-41f6-a6c7-8ba518559e59,09/22/2025,E-TRANSFER ***EQQ,Food & Drink,-55.0
+419355bc-7a38-4b26-a2fb-57e92e262ccb,09/29/2025,INTEREST CREDIT,Uncategorized,-0.12
+f324c1e5-ac87-48c4-a780-0ade34aa80c9,10/01/2025,SEND E-TFR ***U6Z,Uncategorized,1020.0
+0b92e0ee-af02-4b93-ad85-c4b7494194aa,10/06/2025,SEND E-TFR ***9Cv,Uncategorized,206.0
+dee7d8b6-ba55-49bf-9430-925205f54c6e,10/06/2025,SEND E-TFR ***Fe4,Uncategorized,42.0
+75aac3c2-66f6-42e0-8962-bcc44a586184,10/06/2025,E-TRANSFER ***KAG,Uncategorized,-100.0
+2ce01874-622a-49d2-b95d-b1ff9e13bc69,10/06/2025,SEND E-TFR ***afY,Uncategorized,28.25
+cc46ca33-e6b6-48bf-a0f4-c18b30fbeab4,10/07/2025,SEND E-TFR ***s3G,Uncategorized,250.0
+d4c66a47-0470-49f9-93f6-851640569ca7,10/14/2025,SEND E-TFR ***Etr,Uncategorized,300.0
+23da98c5-80ac-4292-ade3-82ac2f98d6e2,10/16/2025,E-TRANSFER ***qYW,Uncategorized,-100.0
+dac52876-ef11-4b48-ba3e-35d6ed1a61c9,10/16/2025,SEND E-TFR ***RUB,Uncategorized,208.0
+7f45b300-bc82-4225-b0b3-0e01cc03e50b,10/27/2025,E-TRANSFER ***XFe,Uncategorized,-40.0
+6fa20e21-c5bb-4800-b6a3-acb5e5f6af7e,10/27/2025,SEND E-TFR ***4uD,Uncategorized,7.46
+93aa37fc-7dd2-48f9-8a43-7214d5bdceb7,10/27/2025,E-TRANSFER ***y4h,Uncategorized,-74.76
+bf756887-1937-495b-bd18-ca302eeb8c5b,10/31/2025,SEND E-TFR ***rjU,Uncategorized,62.7
+35200f02-fda9-44b9-93e5-9e657b915720,10/31/2025,Rent,Bills & Utilities,1020.0
+0a5b30b6-07e4-490e-bfa2-b3fe28e13075,10/31/2025,INTEREST CREDIT,Uncategorized,-0.1
+aaf2d3bf-103e-492f-a89f-9a6cf357620c,11/03/2025,SEND E-TFR ***PxG,Uncategorized,140.0
+ebe4fba8-cd0e-4c1a-bda5-6dd913e21ad2,11/04/2025,SEND E-TFR ***Ef8,Uncategorized,150.87
