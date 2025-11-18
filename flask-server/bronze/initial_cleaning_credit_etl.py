@@ -36,10 +36,19 @@ print(f"Reading: {latest_file}")
 # Check if this is a TD credit file (no headers, 5 columns)
 df = pd.read_csv(latest_file, header=None)
 if len(df.columns) == 5:
-    # TD credit format: Transaction Date, Description, Amount, (empty), Balance
-    df.columns = ['Transaction Date', 'Description', 'Amount', 'Empty', 'Balance']
-    # Remove the empty column and balance column
-    df = df.drop(['Empty', 'Balance'], axis=1)
+    # TD credit format: Transaction Date, Description, Outflow, Inflow, Balance
+    df.columns = ['Transaction Date', 'Description', 'Outflow', 'Inflow', 'Balance']
+    
+    # Process outflows (column 3) and inflows (column 4)
+    df['Outflow'] = pd.to_numeric(df['Outflow'], errors='coerce').fillna(0)
+    df['Inflow'] = pd.to_numeric(df['Inflow'], errors='coerce').fillna(0)
+    
+    # Create Amount column: outflows are positive, inflows are negative
+    df['Amount'] = df['Outflow'] - df['Inflow']
+    
+    # Remove the outflow, inflow, and balance columns
+    df = df.drop(['Outflow', 'Inflow', 'Balance'], axis=1)
+    
     # Add a Category column (will be empty for now)
     df['Category'] = ''
 else:

@@ -19,7 +19,7 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
   const [filteredTransactions, setFilteredTransactions] = useState(sortTransactionsByDate(transactions));
   const [dateRange, setDateRange] = useState({ startDate: '', endDate: '' });
   const [selectedCategory, setSelectedCategory] = useState(null);
-  
+
   // Edit mode state
   const [isEditMode, setIsEditMode] = useState(false);
   const [categories, setCategories] = useState([]);
@@ -50,11 +50,17 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
 
   // TimeFilter will handle updating filteredTransactions when transactions change
 
+  // Filter transactions for the table based on selected category
+  const tableTransactions = React.useMemo(() => {
+    if (!selectedCategory) return filteredTransactions;
+    return filteredTransactions.filter(tx => tx.Category === selectedCategory);
+  }, [filteredTransactions, selectedCategory]);
+
   // Pagination calculations based on filtered transactions
-  const totalPages = Math.ceil(filteredTransactions.length / pageSize);
+  const totalPages = Math.ceil(tableTransactions.length / pageSize);
   const startIndex = (currentPage - 1) * pageSize;
   const endIndex = startIndex + pageSize;
-  const currentTransactions = filteredTransactions.slice(startIndex, endIndex);
+  const currentTransactions = tableTransactions.slice(startIndex, endIndex);
 
   const handlePageChange = (page) => {
     setCurrentPage(page);
@@ -69,7 +75,10 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     const sortedFiltered = sortTransactionsByDate(filtered);
     setFilteredTransactions(sortedFiltered);
     setCurrentPage(1); // Reset to first page when filtering
+    setSelectedCategory(null); // Reset category selection when time filter changes
   }, []);
+
+
 
   const handlePeriodChange = useCallback(({ startDate, endDate }) => {
     setDateRange({ startDate, endDate });
@@ -97,11 +106,11 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
 
   const handleCellClick = (transactionIndex, columnKey) => {
     if (!isEditMode) return;
-    
+
     // Check if this column is editable
     const column = columns.find(col => col.key === columnKey);
     if (!column || !column.editable) return;
-    
+
     const cellKey = `${transactionIndex}-${columnKey}`;
     setEditingCell(cellKey);
   };
@@ -129,11 +138,11 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
     try {
       const updates = Object.values(pendingChanges).map(change => {
         // Get the original transaction data
-        const originalTransaction = filteredTransactions[change.transactionIndex];
-        
+        const originalTransaction = tableTransactions[change.transactionIndex];
+
         // Use Transaction ID if available, otherwise fall back to transaction data
         const transactionId = originalTransaction['Transaction ID'] || originalTransaction['transaction_id'];
-        
+
         return {
           id: transactionId || change.transactionIndex.toString(), // Use Transaction ID if available
           transactionData: {
@@ -190,156 +199,166 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
         </div>
       ) : (
         <>
-          <TimeFilter 
-            transactions={transactions} 
-            onFilterChange={handleFilterChange} 
+          <TimeFilter
+            transactions={transactions}
+            onFilterChange={handleFilterChange}
             onPeriodChange={handlePeriodChange}
           />
-      
-      <div className="flex flex-row gap-6 items-start mb-6">
-        <div className="w-64 flex-shrink-0">
-          <SummaryCard 
-            transactions={filteredTransactions} 
-            startDate={dateRange.startDate} 
-            endDate={dateRange.endDate} 
-          />
-        </div>
-        <div className="flex-1">
-          <ExpensesByCategory 
-            transactions={filteredTransactions} 
-            startDate={dateRange.startDate} 
-            endDate={dateRange.endDate} 
-            selectedCategory={selectedCategory}
-            onCategorySelect={setSelectedCategory}
-          />
-        </div>
-      </div>
-      
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-lg font-bold">Analysis</div>
-        <div className="flex gap-2">
-          <button 
-            onClick={handleEditModeToggle}
-            className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-              isEditMode 
-                ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm' 
-                : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
-            }`}
-            disabled={isSaving}
-          >
-            {isSaving ? 'Saving...' : isEditMode ? 'Save & Exit Edit' : 'Edit'}
-          </button>
-          {isEditMode && (
-            <button 
-              onClick={handleCancelEdit}
-              className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all"
-              disabled={isSaving}
-            >
-              Cancel
-            </button>
-          )}
-          <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Filter</button>
-          <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Export</button>
-        </div>
-      </div>
-      
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr>
-              {columns.map(col => (
-                <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {currentTransactions.map((tx, idx) => (
-              <tr 
-                key={idx} 
-                className={`border-b last:border-b-0 hover:bg-gray-50 transition-colors ${
-                  isEditMode ? 'bg-amber-50/30' : ''
-                }`}
+
+          <div className="flex flex-row gap-6 items-start mb-6">
+            <div className="w-64 flex-shrink-0">
+              <SummaryCard
+                transactions={filteredTransactions}
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+              />
+            </div>
+            <div className="flex-1">
+              <ExpensesByCategory
+                transactions={filteredTransactions}
+                startDate={dateRange.startDate}
+                endDate={dateRange.endDate}
+                selectedCategory={selectedCategory}
+                onCategorySelect={setSelectedCategory}
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-between items-center mb-2">
+            <div className="text-lg font-bold">Analysis</div>
+            <div className="flex gap-2 items-center">
+              {selectedCategory && (
+                <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm border border-blue-100">
+                  <span className="font-medium">Category: {selectedCategory}</span>
+                  <button
+                    onClick={() => setSelectedCategory(null)}
+                    className="hover:bg-blue-100 rounded-full p-0.5 transition-colors"
+                  >
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              )}
+              <button
+                onClick={handleEditModeToggle}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${isEditMode
+                  ? 'bg-amber-500 text-white hover:bg-amber-600 shadow-sm'
+                  : 'bg-white text-gray-700 hover:bg-gray-50 border border-gray-200'
+                  }`}
+                disabled={isSaving}
               >
-                {columns.map(col => {
-                  const cellKey = `${startIndex + idx}-${col.key}`;
-                  const isEditing = editingCell === cellKey;
-                  const cellValue = getCellValue(tx, col.key, startIndex + idx);
-                  const hasPendingChange = pendingChanges[`${startIndex + idx}-${col.key}`];
-                  
-                  return (
-                    <td 
-                      key={col.key} 
-                      className={`py-3 px-4 relative transition-all ${
-                        col.editable && isEditMode 
-                          ? 'cursor-pointer group hover:bg-amber-50/50' 
-                          : ''
+                {isSaving ? 'Saving...' : isEditMode ? 'Save & Exit Edit' : 'Edit'}
+              </button>
+              {isEditMode && (
+                <button
+                  onClick={handleCancelEdit}
+                  className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all"
+                  disabled={isSaving}
+                >
+                  Cancel
+                </button>
+              )}
+              <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Filter</button>
+              <button className="px-4 py-2 rounded-lg bg-white text-gray-700 text-sm hover:bg-gray-50 border border-gray-200 transition-all">Export</button>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl shadow overflow-x-auto">
+            <table className="min-w-full text-sm">
+              <thead>
+                <tr>
+                  {columns.map(col => (
+                    <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {currentTransactions.map((tx, idx) => (
+                  <tr
+                    key={idx}
+                    className={`border-b last:border-b-0 hover:bg-gray-50 transition-colors ${isEditMode ? 'bg-amber-50/30' : ''
                       }`}
-                      onClick={() => handleCellClick(startIndex + idx, col.key)}
-                    >
-                      {isEditing ? (
-                        col.key === 'Category' ? (
-                          <select
-                            value={cellValue}
-                            onChange={(e) => handleCellChange(startIndex + idx, col.key, e.target.value)}
-                            onBlur={handleCellBlur}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
-                            autoFocus
-                          >
-                            {categories.map(category => (
-                              <option key={category} value={category}>
-                                {category}
-                              </option>
-                            ))}
-                          </select>
-                        ) : (
-                          <input
-                            type="text"
-                            value={cellValue}
-                            onChange={(e) => handleCellChange(startIndex + idx, col.key, e.target.value)}
-                            onBlur={handleCellBlur}
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                handleCellBlur();
-                              }
-                            }}
-                            className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
-                            autoFocus
-                          />
-                        )
-                      ) : (
-                        <span className="flex items-center gap-1">
-                          {cellValue}
-                          {col.editable && isEditMode && !isEditing && (
-                            <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs">
-                              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                              </svg>
+                  >
+                    {columns.map(col => {
+                      const cellKey = `${startIndex + idx}-${col.key}`;
+                      const isEditing = editingCell === cellKey;
+                      const cellValue = getCellValue(tx, col.key, startIndex + idx);
+                      const hasPendingChange = pendingChanges[`${startIndex + idx}-${col.key}`];
+
+                      return (
+                        <td
+                          key={col.key}
+                          className={`py-3 px-4 relative transition-all ${col.editable && isEditMode
+                            ? 'cursor-pointer group hover:bg-amber-50/50'
+                            : ''
+                            }`}
+                          onClick={() => handleCellClick(startIndex + idx, col.key)}
+                        >
+                          {isEditing ? (
+                            col.key === 'Category' ? (
+                              <select
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(startIndex + idx, col.key, e.target.value)}
+                                onBlur={handleCellBlur}
+                                className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                                autoFocus
+                              >
+                                {categories.map(category => (
+                                  <option key={category} value={category}>
+                                    {category}
+                                  </option>
+                                ))}
+                              </select>
+                            ) : (
+                              <input
+                                type="text"
+                                value={cellValue}
+                                onChange={(e) => handleCellChange(startIndex + idx, col.key, e.target.value)}
+                                onBlur={handleCellBlur}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    handleCellBlur();
+                                  }
+                                }}
+                                className="w-full p-1.5 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 bg-white"
+                                autoFocus
+                              />
+                            )
+                          ) : (
+                            <span className="flex items-center gap-1">
+                              {cellValue}
+                              {col.editable && isEditMode && !isEditing && (
+                                <span className="opacity-0 group-hover:opacity-100 transition-opacity text-gray-400 text-xs">
+                                  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                  </svg>
+                                </span>
+                              )}
                             </span>
                           )}
-                        </span>
-                      )}
-                      {hasPendingChange && (
-                        <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        totalItems={filteredTransactions.length}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+                          {hasPendingChange && (
+                            <span className="absolute top-1 right-1 w-2 h-2 bg-amber-400 rounded-full"></span>
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            pageSize={pageSize}
+            totalItems={tableTransactions.length}
+            startIndex={startIndex}
+            endIndex={endIndex}
+            onPageChange={handlePageChange}
+            onPageSizeChange={handlePageSizeChange}
+          />
         </>
       )}
     </div>
