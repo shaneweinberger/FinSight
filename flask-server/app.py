@@ -105,6 +105,38 @@ def create_app():
             return jsonify(categories)
         except Exception as e:
             return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+    @app.route('/categories', methods=['POST'])
+    def add_category():
+        """Add a new category."""
+        try:
+            data = request.get_json()
+            if not data or 'category' not in data:
+                return jsonify({'error': 'Category name is required'}), 400
+            
+            category = data['category']
+            if not category or not isinstance(category, str):
+                return jsonify({'error': 'Invalid category name'}), 400
+            
+            success = transaction_service.add_category(category)
+            if success:
+                return jsonify({'message': f'Category {category} added successfully'})
+            else:
+                return jsonify({'error': 'Category already exists or failed to add'}), 400
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+
+    @app.route('/categories/<category>', methods=['DELETE'])
+    def delete_category(category):
+        """Delete a category."""
+        try:
+            success = transaction_service.delete_category(category)
+            if success:
+                return jsonify({'message': f'Category {category} deleted successfully'})
+            else:
+                return jsonify({'error': 'Category not found or failed to delete'}), 404
+        except Exception as e:
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
     
     @app.route('/stats', methods=['GET'])
     def get_stats():

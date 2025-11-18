@@ -108,10 +108,63 @@ class TransactionService:
         
         try:
             with open(categories_file, 'r') as f:
-                return json.load(f)
+                data = json.load(f)
+                # Filter out empty strings
+                if 'categories' in data:
+                    data['categories'] = [c for c in data['categories'] if c and c.strip()]
+                return data
         except Exception as e:
             print(f"Error loading categories: {e}")
             return {"categories": [], "metadata": {}}
+
+    def add_category(self, category_name: str) -> bool:
+        """Add a new category."""
+        try:
+            categories_file = self.gold_dir / "categories.json"
+            data = self.get_categories()
+            
+            if category_name in data['categories']:
+                return False  # Already exists
+            
+            data['categories'].append(category_name)
+            data['categories'].sort()
+            
+            # Update metadata
+            from datetime import datetime
+            data['metadata']['last_updated'] = datetime.now().strftime('%Y-%m-%d')
+            data['metadata']['total_categories'] = len(data['categories'])
+            
+            with open(categories_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"Error adding category: {e}")
+            return False
+
+    def delete_category(self, category_name: str) -> bool:
+        """Delete a category."""
+        try:
+            categories_file = self.gold_dir / "categories.json"
+            data = self.get_categories()
+            
+            if category_name not in data['categories']:
+                return False  # Doesn't exist
+            
+            data['categories'].remove(category_name)
+            
+            # Update metadata
+            from datetime import datetime
+            data['metadata']['last_updated'] = datetime.now().strftime('%Y-%m-%d')
+            data['metadata']['total_categories'] = len(data['categories'])
+            
+            with open(categories_file, 'w') as f:
+                json.dump(data, f, indent=2)
+            
+            return True
+        except Exception as e:
+            print(f"Error deleting category: {e}")
+            return False
     
     def _dataframe_to_transactions(self, df: pd.DataFrame) -> List[Transaction]:
         """Convert DataFrame to list of Transaction objects."""

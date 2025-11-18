@@ -89,7 +89,10 @@ As a professional financial accountant you are given a list of financial transac
 Your job is to assign each Description to one of the following categories:
 {", ".join(categories)}
 
-If you are not confident which category applies, respond with "Uncategorized".
+IMPORTANT INSTRUCTIONS:
+1. You MUST use one of the categories listed above.
+2. If a transaction description contains words that clearly match a category name (e.g. "E-TRANSFER" -> "E-Transfer"), you MUST use that category.
+3. Only use "Uncategorized" if you are absolutely unsure.
 
 Return your answer as a JSON array. Each object should look like:
 {{"Description": "...", "Category": "..."}}

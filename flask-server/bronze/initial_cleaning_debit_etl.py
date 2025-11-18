@@ -81,9 +81,68 @@ else:
             df['Category'] = ''
 
 
-# For now, skip AI categorization and just set all categories to 'Uncategorized'
-# This will allow the ETL to work without requiring the AI dependencies
-df['Category'] = 'Uncategorized'
+# Load existing categories for Gemini
+with open(CATEGORIES_FILE, 'r') as f:
+    categories_json = json.load(f)
+categories = categories_json['categories']
+
+# Create a better prompt for Gemini
+prompt = f"""
+As a professional financial accountant you are given a list of financial transactions. Each has a 'Description' (what the transaction was) and an 'Amount'.
+
+Your job is to assign each Description to one of the following categories:
+{", ".join(categories)}
+
+IMPORTANT INSTRUCTIONS:
+1. You MUST use one of the categories listed above.
+2. If a transaction description contains words that clearly match a category name (e.g. "E-TRANSFER" -> "E-Transfer"), you MUST use that category.
+3. Only use "Uncategorized" if you are absolutely unsure.
+
+Return your answer as a JSON array. Each object should look like:
+{{"Description": "...", "Category": "..."}}
+
+Here are the Descriptions:
+{df['Description'].tolist()}
+"""
+
+# Send to Gemini
+print("Sending to Gemini for categorization...")
+model = genai.GenerativeModel('gemini-2.5-flash')
+response = model.generate_content(prompt, generation_config={"temperature": 0.2})
+
+# Debug
+print("RAW GEMINI RESPONSE:\n", response.text)
+
+# Extract JSON
+match = re.search(r'\[\s*{.*?}\s*\]', response.text, re.DOTALL)
+if not match:
+    # Fallback if JSON not found
+    print("Warning: Gemini response did not contain valid JSON array. Setting all to Uncategorized.")
+    df['Category'] = 'Uncategorized'
+else:
+    try:
+        output_json = json.loads(match.group(0))
+        
+        # Create a unique identifier for each transaction before merging
+        df['Transaction_ID'] = range(len(df))
+        
+        # Merge with df
+        output_df = pd.DataFrame(output_json)
+        df['Description'] = df['Description'].astype(str)
+        output_df['Description'] = output_df['Description'].astype(str)
+        
+        # Create a mapping from description to category (taking the first occurrence)
+        description_to_category = output_df.set_index('Description')['Category'].to_dict()
+        
+        # Apply the mapping to get categories
+        df['Category'] = df['Description'].map(description_to_category).fillna('Uncategorized')
+        
+        # Remove the temporary ID column
+        df = df.drop('Transaction_ID', axis=1)
+        
+    except Exception as e:
+        print(f"Error parsing Gemini response: {e}")
+        df['Category'] = 'Uncategorized'
 
 # Reorder
 df = df[['Transaction Date', 'Description', 'Category', 'Amount']]

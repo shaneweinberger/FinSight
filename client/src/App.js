@@ -2,16 +2,18 @@ import React, { useState, useEffect } from 'react';
 import Overview from './components/Overview';
 import MonthlyAnalysis from './components/MonthlyAnalysis';
 import TransactionUploads from './components/TransactionUploads';
+import Categories from './components/Categories';
 
 const sidebarLinks = [
   { label: 'Overview', icon: '📊' },
   { label: 'Analysis', icon: '📈' },
-  { label: 'Transaction Uploads', icon: '📁' }
+  { label: 'Transaction Uploads', icon: '📁' },
+  { label: 'Categories', icon: '🏷️' }
 ];
 
 export default function App() {
   const [transactions, setTransactions] = useState([]);
-  
+
   // Tab state
   const [activeTab, setActiveTab] = useState('Overview');
 
@@ -77,10 +79,11 @@ export default function App() {
             </div>
           </div>
         </div>
-        
+
         {activeTab === 'Overview' && <Overview transactions={transactions} />}
         {activeTab === 'Analysis' && <MonthlyAnalysis transactions={transactions} onRefresh={fetchTransactions} />}
         {activeTab === 'Transaction Uploads' && <TransactionUploads onReprocess={handleReprocess} />}
+        {activeTab === 'Categories' && <Categories />}
       </main>
     </div>
   );
