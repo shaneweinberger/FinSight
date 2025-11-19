@@ -4,11 +4,15 @@ Utility for initializing updated CSV files from original cleaned files.
 import pandas as pd
 import shutil
 from pathlib import Path
-from typing import Tuple
+from typing import Tuple, Dict
 
 from config import (
-    CREDIT_CLEANED_FILE, DEBIT_CLEANED_FILE, MERGED_FILE,
-    CREDIT_CLEANED_UPDATED_FILE, DEBIT_CLEANED_UPDATED_FILE, MERGED_UPDATED_FILE
+    CREDIT_CLEANED_UPDATED_FILE,
+    DEBIT_CLEANED_UPDATED_FILE,
+    # MERGED_UPDATED_FILE, # Deprecated
+    CREDIT_CLEANED_FILE,
+    DEBIT_CLEANED_FILE,
+    # MERGED_FILE # Deprecated
 )
 
 
@@ -18,20 +22,31 @@ def initialize_updated_files() -> Tuple[bool, str]:
     Returns (success, message).
     """
     try:
-        # Initialize credit updated file
-        if CREDIT_CLEANED_FILE.exists() and not CREDIT_CLEANED_UPDATED_FILE.exists():
-            shutil.copy2(CREDIT_CLEANED_FILE, CREDIT_CLEANED_UPDATED_FILE)
-            print(f"Initialized {CREDIT_CLEANED_UPDATED_FILE}")
-        
-        # Initialize debit updated file
-        if DEBIT_CLEANED_FILE.exists() and not DEBIT_CLEANED_UPDATED_FILE.exists():
-            shutil.copy2(DEBIT_CLEANED_FILE, DEBIT_CLEANED_UPDATED_FILE)
-            print(f"Initialized {DEBIT_CLEANED_UPDATED_FILE}")
-        
-        # Initialize merged updated file
-        if MERGED_FILE.exists() and not MERGED_UPDATED_FILE.exists():
-            shutil.copy2(MERGED_FILE, MERGED_UPDATED_FILE)
-            print(f"Initialized {MERGED_UPDATED_FILE}")
+        # Initialize credit file
+        if not CREDIT_CLEANED_UPDATED_FILE.exists():
+            if CREDIT_CLEANED_FILE.exists():
+                shutil.copy2(CREDIT_CLEANED_FILE, CREDIT_CLEANED_UPDATED_FILE)
+                print(f"Initialized {CREDIT_CLEANED_UPDATED_FILE} from original")
+            else:
+                # Create empty with headers if original doesn't exist
+                pd.DataFrame(columns=['Transaction ID', 'Transaction Date', 'Description', 'Category', 'Amount']).to_csv(CREDIT_CLEANED_UPDATED_FILE, index=False)
+                print(f"Created empty {CREDIT_CLEANED_UPDATED_FILE}")
+
+        # Initialize debit file
+        if not DEBIT_CLEANED_UPDATED_FILE.exists():
+            if DEBIT_CLEANED_FILE.exists():
+                shutil.copy2(DEBIT_CLEANED_FILE, DEBIT_CLEANED_UPDATED_FILE)
+                print(f"Initialized {DEBIT_CLEANED_UPDATED_FILE} from original")
+            else:
+                # Create empty with headers
+                pd.DataFrame(columns=['Transaction ID', 'Transaction Date', 'Description', 'Category', 'Amount']).to_csv(DEBIT_CLEANED_UPDATED_FILE, index=False)
+                print(f"Created empty {DEBIT_CLEANED_UPDATED_FILE}")
+
+        # Merged file is deprecated in new pipeline
+        # if not MERGED_UPDATED_FILE.exists():
+        #     if MERGED_FILE.exists():
+        #         shutil.copy2(MERGED_FILE, MERGED_UPDATED_FILE)
+        #         print(f"Initialized {MERGED_UPDATED_FILE} from original")
         
         return True, "Updated CSV files initialized successfully"
         
@@ -39,14 +54,12 @@ def initialize_updated_files() -> Tuple[bool, str]:
         return False, f"Error initializing updated files: {str(e)}"
 
 
-def get_updated_file_paths() -> dict:
-    """
-    Get the paths to the updated CSV files, falling back to original files if updated don't exist.
-    """
+def get_updated_file_paths() -> Dict[str, Path]:
+    """Get paths to the updated files."""
     return {
-        'credit': CREDIT_CLEANED_UPDATED_FILE if CREDIT_CLEANED_UPDATED_FILE.exists() else CREDIT_CLEANED_FILE,
-        'debit': DEBIT_CLEANED_UPDATED_FILE if DEBIT_CLEANED_UPDATED_FILE.exists() else DEBIT_CLEANED_FILE,
-        'merged': MERGED_UPDATED_FILE if MERGED_UPDATED_FILE.exists() else MERGED_FILE
+        'credit': CREDIT_CLEANED_UPDATED_FILE,
+        'debit': DEBIT_CLEANED_UPDATED_FILE,
+        # 'merged': MERGED_UPDATED_FILE # Deprecated
     }
 
 

@@ -6,7 +6,7 @@ from typing import List, Dict, Any
 from pathlib import Path
 import json
 
-from config import GOLD_DIR, CREDIT_CLEANED_FILE, DEBIT_CLEANED_FILE, MERGED_FILE
+from config import GOLD_DIR, CREDIT_CLEANED_UPDATED_FILE, DEBIT_CLEANED_UPDATED_FILE
 from models.transaction import Transaction
 from utils.csv_initializer import initialize_updated_files, get_updated_file_paths, update_transaction_in_file, bulk_update_transactions_in_file
 
@@ -16,9 +16,9 @@ class TransactionService:
     
     def __init__(self):
         self.gold_dir = GOLD_DIR
-        self.credit_file = CREDIT_CLEANED_FILE
-        self.debit_file = DEBIT_CLEANED_FILE
-        self.merged_file = MERGED_FILE
+        self.credit_file = CREDIT_CLEANED_UPDATED_FILE
+        self.debit_file = DEBIT_CLEANED_UPDATED_FILE
+        # self.merged_file = MERGED_FILE # Deprecated
         
         # Initialize updated files on first run
         initialize_updated_files()

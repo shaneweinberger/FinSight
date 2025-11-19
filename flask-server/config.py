@@ -8,26 +8,29 @@ from pathlib import Path
 BASE_DIR = Path(__file__).parent
 
 # Data directories
-BRONZE_DIR = BASE_DIR / "bronze"
-GOLD_DIR = BASE_DIR / "gold"
-CREDIT_UPLOADS_DIR = BASE_DIR / "credit_uploads"
-DEBIT_UPLOADS_DIR = BASE_DIR / "debit_uploads"
-UPLOADS_DIR = BASE_DIR / "uploads"
+DATA_DIR = BASE_DIR / "data"
+BRONZE_DIR = DATA_DIR / "bronze"
+SILVER_DIR = DATA_DIR / "silver"
+GOLD_DIR = DATA_DIR / "gold"
+
+CREDIT_UPLOADS_DIR = BRONZE_DIR / "credit"
+DEBIT_UPLOADS_DIR = BRONZE_DIR / "debit"
+UPLOADS_DIR = BASE_DIR / "uploads" # Keep this for temp uploads if needed, or deprecate
 
 # File paths
 CATEGORIES_FILE = GOLD_DIR / "categories.json"
-CREDIT_CLEANED_FILE = GOLD_DIR / "credit_cleaned.csv"
-DEBIT_CLEANED_FILE = GOLD_DIR / "debit_cleaned.csv"
-MERGED_FILE = GOLD_DIR / "debit_credit_merge_etl.csv"
+CREDIT_CLEANED_FILE = SILVER_DIR / "credit_silver.csv" # Renamed from credit_cleaned.csv
+DEBIT_CLEANED_FILE = SILVER_DIR / "debit_silver.csv"   # Renamed from debit_cleaned.csv
+# MERGED_FILE is deprecated in new pipeline
 
-# Updated files for editing functionality
+# Updated files for editing functionality (The Source of Truth)
 CREDIT_CLEANED_UPDATED_FILE = GOLD_DIR / "credit_cleaned_and_updated.csv"
 DEBIT_CLEANED_UPDATED_FILE = GOLD_DIR / "debit_cleaned_and_updated.csv"
-MERGED_UPDATED_FILE = GOLD_DIR / "debit_credit_merge_etl_and_updated.csv"
+# MERGED_UPDATED_FILE is deprecated
 
-# ETL Scripts
-CREDIT_ETL_SCRIPT = BRONZE_DIR / "initial_cleaning_credit_etl.py"
-DEBIT_ETL_SCRIPT = BRONZE_DIR / "initial_cleaning_debit_etl.py"
+# ETL Scripts (Deprecated, kept for reference until full cleanup)
+CREDIT_ETL_SCRIPT = BASE_DIR / "bronze" / "initial_cleaning_credit_etl.py"
+DEBIT_ETL_SCRIPT = BASE_DIR / "bronze" / "initial_cleaning_debit_etl.py"
 
 # Flask configuration
 UPLOAD_FOLDER = str(UPLOADS_DIR)
@@ -39,5 +42,5 @@ API_PORT = 8000
 DEBUG = True
 
 # Ensure directories exist
-for directory in [BRONZE_DIR, GOLD_DIR, CREDIT_UPLOADS_DIR, DEBIT_UPLOADS_DIR, UPLOADS_DIR]:
-    directory.mkdir(exist_ok=True)
+for directory in [DATA_DIR, BRONZE_DIR, SILVER_DIR, GOLD_DIR, CREDIT_UPLOADS_DIR, DEBIT_UPLOADS_DIR, UPLOADS_DIR]:
+    directory.mkdir(parents=True, exist_ok=True)
