@@ -1,6 +1,6 @@
 Transaction Date,Description,Amount,Category
 06/30/2025,INTEREST CREDIT,-0.32,Uncategorized
-07/02/2025,UWO-TUITION  Q3H8U9,2000.0,Bills & Utilities
+07/02/2025,UWO-TUITION  Q3H8U9,2000.0,Personal
 07/09/2025,SEND E-TFR ***U7k,1020.0,E-Transfer
 07/11/2025,TD VISA PREAUTH PYMT,521.16,Uncategorized
 07/15/2025,E-TRANSFER ***KGv,-850.0,E-Transfer
@@ -8,7 +8,7 @@ Transaction Date,Description,Amount,Category
 07/31/2025,INTEREST CREDIT,-0.3,Uncategorized
 08/08/2025,SEND E-TFR ***FdY,1020.0,E-Transfer
 08/11/2025,TD VISA PREAUTH PYMT,78.76,Uncategorized
-08/15/2025,UWO-TUITION  R9K5K4,16762.02,Bills & Utilities
+08/15/2025,UWO-TUITION  R9K5K4,16762.02,Personal
 08/19/2025,E-TRANSFER ***97V,-140.0,E-Transfer
 08/28/2025,TD ATM W/D    008626,50.0,Uncategorized
 08/29/2025,INTEREST CREDIT,-0.21,Uncategorized
@@ -31,10 +31,10 @@ Transaction Date,Description,Amount,Category
 10/16/2025,E-TRANSFER ***qYW,-100.0,E-Transfer
 10/16/2025,SEND E-TFR ***RUB,208.0,E-Transfer
 08/08/2025,SEND E-TFR ***FdY,1020.0,E-Transfer
-08/11/2025,TD VISA PREAUTH PYMT,78.76,Uncategorized
-08/15/2025,UWO-TUITION  R9K5K4,16762.02,Bills & Utilities
+08/11/2025,TD VISA PREAUTH PYMT,78.76,Bills & Utilities
+08/15/2025,UWO-TUITION  R9K5K4,16762.02,Personal
 08/19/2025,E-TRANSFER ***97V,-140.0,E-Transfer
-08/28/2025,TD ATM W/D    008626,50.0,Uncategorized
+08/28/2025,TD ATM W/D    008626,50.0,Personal
 08/29/2025,INTEREST CREDIT,-0.21,Uncategorized
 09/02/2025,SEND E-TFR ***PhT,2.0,E-Transfer
 09/08/2025,SEND E-TFR ***ZKF,1020.0,E-Transfer

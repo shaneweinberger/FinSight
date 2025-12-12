@@ -8,7 +8,7 @@ const FileManager = ({ uploadType, onReprocess }) => {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/uploaded-files/${uploadType}`);
+      const response = await fetch(`http://localhost:8000/files/${uploadType}`);
       const data = await response.json();
       if (data.files) {
         setFiles(data.files);
@@ -34,7 +34,7 @@ const FileManager = ({ uploadType, onReprocess }) => {
 
     try {
       const response = await fetch(
-        `http://localhost:8000/uploaded-files/${uploadType}/${encodeURIComponent(filename)}`,
+        `http://localhost:8000/files/${uploadType}/${encodeURIComponent(filename)}`,
         { method: 'DELETE' }
       );
       const data = await response.json();

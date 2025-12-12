@@ -5,7 +5,7 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from config import API_HOST, API_PORT, DEBUG
-from services import TransactionService, UploadService, PipelineService
+from services import TransactionService, UploadService, PipelineService, RuleService
 from utils import transactions_to_json
 
 
@@ -18,7 +18,55 @@ def create_app():
     transaction_service = TransactionService()
     upload_service = UploadService()
     pipeline_service = PipelineService()
+    rule_service = RuleService()
     
+    @app.route('/rules', methods=['GET'])
+    def get_rules():
+        """Get all rules and metadata."""
+        data = rule_service.get_data()
+        return jsonify({
+            'rules': [r.to_dict() for r in data['rules']],
+            'last_reprocessed': data['metadata'].get('last_reprocessed')
+        })
+
+    @app.route('/rules', methods=['POST'])
+    def add_rule():
+        """Add a new rule."""
+        data = request.json
+        if not data or 'content' not in data:
+            return jsonify({'error': 'Rule content is required'}), 400
+            
+        rule = rule_service.add_rule(
+            data['content'], 
+            data.get('type', 'both')
+        )
+        return jsonify(rule.to_dict()), 201
+        
+    @app.route('/rules/<rule_id>', methods=['PUT'])
+    def update_rule(rule_id):
+        """Update a rule."""
+        data = request.json
+        if not data or 'content' not in data:
+             return jsonify({'error': 'Rule content is required'}), 400
+             
+        rule = rule_service.update_rule(
+            rule_id, 
+            data['content'],
+            data.get('type', 'both')
+        )
+        
+        if rule:
+            return jsonify(rule.to_dict()), 200
+        return jsonify({'error': 'Rule not found'}), 404
+
+    @app.route('/rules/<rule_id>', methods=['DELETE'])
+    def delete_rule(rule_id):
+        """Delete a rule."""
+        success = rule_service.delete_rule(rule_id)
+        if success:
+            return jsonify({'message': 'Rule deleted successfully'}), 200
+        return jsonify({'error': 'Rule not found'}), 404
+
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint."""

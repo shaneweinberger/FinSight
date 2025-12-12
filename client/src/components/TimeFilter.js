@@ -1,24 +1,36 @@
 import React, { useState, useEffect } from 'react';
 
 const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
-  const [viewMode, setViewMode] = useState('monthly'); // 'monthly' or 'weekly'
+  const [viewMode, setViewMode] = useState('monthly'); // 'monthly', 'weekly', 'custom', 'all'
   const [selectedPeriod, setSelectedPeriod] = useState('');
   const [availablePeriods, setAvailablePeriods] = useState([]);
+  const [customStartDate, setCustomStartDate] = useState('');
+  const [customEndDate, setCustomEndDate] = useState('');
+
+  // Helper to normalize date to YYYY-MM-DD string (preserving local date semantics)
+  const toISODateString = (date) => {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const d = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
 
   // Generate available periods based on view mode and transactions
   useEffect(() => {
-    if (!transactions.length) return;
+    if (!transactions.length || (viewMode !== 'monthly' && viewMode !== 'weekly')) return;
 
     const periods = new Set();
-    
+
     transactions.forEach(tx => {
       const date = new Date(tx['Transaction Date']);
-      
+      // Handle potential invalid dates
+      if (isNaN(date.getTime())) return;
+
       if (viewMode === 'monthly') {
         // Format: YYYY-MM (e.g., "2024-07")
         const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
         periods.add(monthKey);
-      } else {
+      } else if (viewMode === 'weekly') {
         // Format: YYYY-WW (e.g., "2024-28" for week 28 of 2024)
         const year = date.getFullYear();
         const week = getWeekNumber(date);
@@ -29,12 +41,25 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
 
     const sortedPeriods = Array.from(periods).sort().reverse(); // Most recent first
     setAvailablePeriods(sortedPeriods);
-    
-    // Auto-select the most recent period
+
+    // Auto-select the most recent period if none selected
     if (sortedPeriods.length > 0 && !selectedPeriod) {
       setSelectedPeriod(sortedPeriods[0]);
     }
   }, [transactions, viewMode]);
+
+  // Initialize custom date range with min/max transaction dates when switching to custom/all
+  useEffect(() => {
+    if (transactions.length > 0) {
+      const dates = transactions.map(tx => new Date(tx['Transaction Date'])).filter(d => !isNaN(d));
+      if (dates.length > 0) {
+        const minDate = new Date(Math.min(...dates));
+        const maxDate = new Date(Math.max(...dates));
+        if (!customStartDate) setCustomStartDate(toISODateString(minDate));
+        if (!customEndDate) setCustomEndDate(toISODateString(maxDate));
+      }
+    }
+  }, [transactions]);
 
   // Get week number for a date
   const getWeekNumber = (date) => {
@@ -45,31 +70,75 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
     return Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
   };
 
-  // Filter transactions based on selected period
+  // Filter transactions based on selection
   useEffect(() => {
-    if (!selectedPeriod || !transactions.length) {
-      onFilterChange(transactions);
+    if (!transactions.length) {
+      onFilterChange([]);
       return;
     }
 
-    const filtered = transactions.filter(tx => {
-      const txDate = new Date(tx['Transaction Date']);
-      
-      if (viewMode === 'monthly') {
-        // Check if transaction is in selected month
-        const txMonthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
-        return txMonthKey === selectedPeriod;
-      } else {
-        // Check if transaction is in selected week
-        const txYear = txDate.getFullYear();
-        const txWeek = getWeekNumber(txDate);
-        const txWeekKey = `${txYear}-${String(txWeek).padStart(2, '0')}`;
-        return txWeekKey === selectedPeriod;
+    let filtered = [];
+    let startStr = '';
+    let endStr = '';
+
+    if (viewMode === 'all') {
+      filtered = transactions;
+      // Get full range
+      const dates = transactions.map(tx => new Date(tx['Transaction Date'])).filter(d => !isNaN(d));
+      if (dates.length > 0) {
+        startStr = toISODateString(new Date(Math.min(...dates)));
+        endStr = toISODateString(new Date(Math.max(...dates)));
       }
-    });
+    } else if (viewMode === 'custom') {
+      if (customStartDate && customEndDate) {
+        filtered = transactions.filter(tx => {
+          const txDate = new Date(tx['Transaction Date']);
+          if (isNaN(txDate.getTime())) return false;
+
+          const txDateStr = toISODateString(txDate);
+          // String comparison works for YYYY-MM-DD
+          return txDateStr >= customStartDate && txDateStr <= customEndDate;
+        });
+        startStr = customStartDate;
+        endStr = customEndDate;
+      } else {
+        filtered = transactions;
+      }
+    } else if (selectedPeriod) {
+      // Monthly or Weekly
+      filtered = transactions.filter(tx => {
+        const txDate = new Date(tx['Transaction Date']);
+        if (isNaN(txDate.getTime())) return false;
+
+        if (viewMode === 'monthly') {
+          const txMonthKey = `${txDate.getFullYear()}-${String(txDate.getMonth() + 1).padStart(2, '0')}`;
+          return txMonthKey === selectedPeriod;
+        } else {
+          const txYear = txDate.getFullYear();
+          const txWeek = getWeekNumber(txDate);
+          const txWeekKey = `${txYear}-${String(txWeek).padStart(2, '0')}`;
+          return txWeekKey === selectedPeriod;
+        }
+      });
+
+      const range = getPeriodRange(selectedPeriod, viewMode);
+      startStr = range.startDate;
+      endStr = range.endDate;
+    }
 
     onFilterChange(filtered);
-  }, [selectedPeriod, viewMode, transactions, onFilterChange]);
+
+    // Notify parent of the effective date range
+    if (onPeriodChange) {
+      onPeriodChange({
+        startDate: startStr,
+        endDate: endStr,
+        viewMode,
+        selectedPeriod
+      });
+    }
+
+  }, [viewMode, selectedPeriod, customStartDate, customEndDate, transactions, onFilterChange, onPeriodChange]);
 
   // Helper to get start and end dates for a period
   const getPeriodRange = (period, mode) => {
@@ -78,9 +147,10 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
       const [year, month] = period.split('-');
       const startDate = new Date(parseInt(year), parseInt(month) - 1, 1);
       const endDate = new Date(parseInt(year), parseInt(month), 0); // last day of month
+
       return {
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
+        startDate: toISODateString(startDate),
+        endDate: toISODateString(endDate)
       };
     } else {
       const [year, week] = period.split('-');
@@ -94,24 +164,20 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
         ISOweekStart.setDate(simple.getDate() + 8 - simple.getDay());
       const ISOweekEnd = new Date(ISOweekStart);
       ISOweekEnd.setDate(ISOweekStart.getDate() + 6);
+
       return {
-        startDate: ISOweekStart.toISOString().split('T')[0],
-        endDate: ISOweekEnd.toISOString().split('T')[0],
+        startDate: toISODateString(ISOweekStart),
+        endDate: toISODateString(ISOweekEnd)
       };
     }
   };
 
-  // Callbacks for when period changes
-  useEffect(() => {
-    if (onPeriodChange) {
-      const { startDate, endDate } = getPeriodRange(selectedPeriod, viewMode);
-      onPeriodChange({ startDate, endDate, viewMode, selectedPeriod });
-    }
-  }, [selectedPeriod, viewMode, onPeriodChange]);
-
   const handleViewModeChange = (mode) => {
     setViewMode(mode);
-    setSelectedPeriod(''); // Reset selection when changing view mode
+    if (mode === 'monthly' || mode === 'weekly') {
+      setSelectedPeriod(''); // Reset selection to force auto-select or empty
+    }
+    // For custom/all, we don't need selectedPeriod
   };
 
   const formatPeriodLabel = (period) => {
@@ -129,9 +195,9 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
         mondayDate.setDate(simple.getDate() - simple.getDay() + 1);
       else
         mondayDate.setDate(simple.getDate() + 8 - simple.getDay());
-      
-      return mondayDate.toLocaleDateString('en-US', { 
-        month: 'short', 
+
+      return mondayDate.toLocaleDateString('en-US', {
+        month: 'short',
         day: 'numeric',
         year: 'numeric'
       });
@@ -139,60 +205,81 @@ const TimeFilter = ({ transactions, onFilterChange, onPeriodChange }) => {
   };
 
   return (
-    <div className="flex items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
+    <div className="flex flex-wrap items-center gap-4 mb-6 p-4 bg-gray-50 rounded-lg">
       {/* View Mode Toggle */}
       <div className="flex items-center gap-2">
         <span className="text-sm text-gray-600 font-medium">View:</span>
         <div className="flex bg-white border border-gray-200 rounded-lg p-1">
-          <button
-            onClick={() => handleViewModeChange('monthly')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
-              viewMode === 'monthly' 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Monthly
-          </button>
-          <button
-            onClick={() => handleViewModeChange('weekly')}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${
-              viewMode === 'weekly' 
-                ? 'bg-blue-600 text-white' 
-                : 'text-gray-600 hover:text-gray-800'
-            }`}
-          >
-            Weekly
-          </button>
+          {['monthly', 'weekly', 'custom', 'all'].map(mode => (
+            <button
+              key={mode}
+              onClick={() => handleViewModeChange(mode)}
+              className={`px-3 py-1 rounded text-sm font-medium transition capitalize ${viewMode === mode
+                  ? 'bg-blue-600 text-white'
+                  : 'text-gray-600 hover:text-gray-800'
+                }`}
+            >
+              {mode === 'all' ? 'All Data' : mode}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* Period Selector */}
-      <div className="flex items-center gap-2">
-        <label className="text-sm text-gray-600 font-medium">
-          {viewMode === 'monthly' ? 'Month:' : 'Week:'}
-        </label>
-        <select
-          value={selectedPeriod}
-          onChange={(e) => setSelectedPeriod(e.target.value)}
-          className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
-        >
-          <option value="">All {viewMode === 'monthly' ? 'Months' : 'Weeks'}</option>
-          {availablePeriods.map(period => (
-            <option key={period} value={period}>
-              {formatPeriodLabel(period)}
-            </option>
-          ))}
-        </select>
-      </div>
-      
-      {selectedPeriod && (
-        <span className="text-sm text-gray-500">
-          Showing {formatPeriodLabel(selectedPeriod)}
+      {/* Controls based on View Mode */}
+      {(viewMode === 'monthly' || viewMode === 'weekly') && (
+        <div className="flex items-center gap-2">
+          <label className="text-sm text-gray-600 font-medium">
+            {viewMode === 'monthly' ? 'Month:' : 'Week:'}
+          </label>
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="">Select {viewMode === 'monthly' ? 'Month' : 'Week'}</option>
+            {availablePeriods.map(period => (
+              <option key={period} value={period}>
+                {formatPeriodLabel(period)}
+              </option>
+            ))}
+          </select>
+        </div>
+      )}
+
+      {viewMode === 'custom' && (
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">From:</label>
+            <input
+              type="date"
+              value={customStartDate}
+              onChange={(e) => setCustomStartDate(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">To:</label>
+            <input
+              type="date"
+              value={customEndDate}
+              onChange={(e) => setCustomEndDate(e.target.value)}
+              className="px-3 py-1 border border-gray-300 rounded text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Current Selection Label */}
+      {(selectedPeriod || viewMode === 'custom' || viewMode === 'all') && (
+        <span className="text-sm text-gray-500 ml-auto font-medium">
+          {viewMode === 'monthly' && selectedPeriod && formatPeriodLabel(selectedPeriod)}
+          {viewMode === 'weekly' && selectedPeriod && `Week of ${formatPeriodLabel(selectedPeriod)}`}
+          {viewMode === 'custom' && customStartDate && customEndDate && `${customStartDate} to ${customEndDate}`}
+          {viewMode === 'all' && 'Showing All Transactions'}
         </span>
       )}
     </div>
   );
 };
 
-export default TimeFilter; 
+export default TimeFilter;

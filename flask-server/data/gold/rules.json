@@ -1,0 +1,10 @@
+{
+  "rules": [
+    {
+      "id": "9269fa34-5007-41d1-966c-eea6b10ee0de",
+      "content": "Transactions labelled \"Ivey Business School\" that are under $30 are lunch and the description should change to \"Lunch at Ivey\" and they should be categorized accordingly",
+      "type": "credit"
+    }
+  ],
+  "metadata": {}
+}

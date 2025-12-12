@@ -10,12 +10,11 @@
     "Personal",
     "Shopping",
     "Travel",
-    "Uncategorized",
-    "Zelle"
+    "Uncategorized"
   ],
   "metadata": {
     "last_updated": "2025-11-18",
-    "total_categories": 12,
+    "total_categories": 11,
     "source": "credit_transactions"
   }
 }

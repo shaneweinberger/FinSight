@@ -17,9 +17,11 @@ class PipelineService:
     """Orchestrates the ETL pipeline."""
     
     def __init__(self):
+        from services import RuleService  # Lazy import to avoid circular dependency
+        self.rule_service = RuleService()
         self.credit_extractor = CreditExtractor()
         self.debit_extractor = DebitExtractor()
-        self.transformer = TransactionTransformer(CATEGORIES_FILE)
+        self.transformer = TransactionTransformer(CATEGORIES_FILE, self.rule_service)
         self.loader = Loader(SILVER_DIR, GOLD_DIR)
         
     def run_pipeline(self, upload_type: str = 'all') -> Dict[str, Any]:
@@ -39,7 +41,7 @@ class PipelineService:
                 )
                 if not credit_df.empty:
                     # Transform
-                    credit_df = self.transformer.transform(credit_df)
+                    credit_df = self.transformer.transform(credit_df, transaction_type='credit')
                     
                     # Save Silver
                     self.loader.save_silver(credit_df, "credit_silver.csv")
@@ -60,7 +62,7 @@ class PipelineService:
                 )
                 if not debit_df.empty:
                     # Transform
-                    debit_df = self.transformer.transform(debit_df)
+                    debit_df = self.transformer.transform(debit_df, transaction_type='debit')
                     
                     # Save Silver
                     self.loader.save_silver(debit_df, "debit_silver.csv")
@@ -71,6 +73,10 @@ class PipelineService:
                     results['debit'] = {'status': 'success', 'count': len(debit_df)}
                 else:
                     results['debit'] = {'status': 'no_files', 'count': 0}
+            
+            # Update last reprocessed timestamp
+            if self.rule_service:
+                self.rule_service.set_last_reprocessed()
                     
             return {'success': True, 'results': results}
             

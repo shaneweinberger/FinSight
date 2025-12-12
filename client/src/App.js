@@ -3,12 +3,14 @@ import Overview from './components/Overview';
 import MonthlyAnalysis from './components/MonthlyAnalysis';
 import TransactionUploads from './components/TransactionUploads';
 import Categories from './components/Categories';
+import Rules from './components/Rules';
 
 const sidebarLinks = [
   { label: 'Overview', icon: '📊' },
   { label: 'Analysis', icon: '📈' },
   { label: 'Transaction Uploads', icon: '📁' },
-  { label: 'Categories', icon: '🏷️' }
+  { label: 'Categories', icon: '🏷️' },
+  { label: 'Rules', icon: '📝' }
 ];
 
 export default function App() {
@@ -84,6 +86,7 @@ export default function App() {
         {activeTab === 'Analysis' && <MonthlyAnalysis transactions={transactions} onRefresh={fetchTransactions} />}
         {activeTab === 'Transaction Uploads' && <TransactionUploads onReprocess={handleReprocess} />}
         {activeTab === 'Categories' && <Categories />}
+        {activeTab === 'Rules' && <Rules />}
       </main>
     </div>
   );

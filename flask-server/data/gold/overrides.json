@@ -1,5 +1,19 @@
 {
   "10/31/2025_SEND E-TFR ***7Uj_1020.0": {
-    "Category": "Bills & Utilities"
+    "Category": "Bills & Utilities",
+    "Description": "Rent"
+  },
+  "10/14/2025_IVEY BUSINESS SCHOOL_11.96": {
+    "Category": "Food & Drink"
+  },
+  "10/27/2025_E-TRANSFER ***XFe_-40.0": {
+    "Category": "Food & Drink"
+  },
+  "10/18/2025_FAMOUS PLAYER 7422QPS_10.16": {
+    "Category": "Food & Drink",
+    "Description": "Movie Popcorn"
+  },
+  "10/18/2025_Movie Popcorn_10.16": {
+    "Category": "Entertainment"
   }
 }
