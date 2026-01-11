@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Plus, RefreshCw, AlertCircle } from 'lucide-react';
+import { authenticatedFetch } from '../utils/api';
 
 const Categories = () => {
     const [categories, setCategories] = useState([]);
@@ -15,7 +16,7 @@ const Categories = () => {
 
     const fetchCategories = async () => {
         try {
-            const response = await fetch('http://localhost:8000/categories');
+            const response = await authenticatedFetch('http://localhost:8000/categories');
             if (!response.ok) throw new Error('Failed to fetch categories');
             const data = await response.json();
             setCategories(data.categories || []);
@@ -31,9 +32,8 @@ const Categories = () => {
         if (!newCategory.trim()) return;
 
         try {
-            const response = await fetch('http://localhost:8000/categories', {
+            const response = await authenticatedFetch('http://localhost:8000/categories', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ category: newCategory.trim() }),
             });
 
@@ -54,7 +54,7 @@ const Categories = () => {
         if (!window.confirm(`Are you sure you want to delete "${category}"?`)) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/categories/${encodeURIComponent(category)}`, {
+            const response = await authenticatedFetch(`http://localhost:8000/categories/${encodeURIComponent(category)}`, {
                 method: 'DELETE',
             });
 
@@ -80,12 +80,12 @@ const Categories = () => {
         try {
             // Reprocess credit files
             setProcessingStatus('Reprocessing credit transactions...');
-            const creditRes = await fetch('http://localhost:8000/reprocess/credit', { method: 'POST' });
+            const creditRes = await authenticatedFetch('http://localhost:8000/reprocess/credit', { method: 'POST' });
             if (!creditRes.ok) throw new Error('Failed to reprocess credit transactions');
 
             // Reprocess debit files
             setProcessingStatus('Reprocessing debit transactions...');
-            const debitRes = await fetch('http://localhost:8000/reprocess/debit', { method: 'POST' });
+            const debitRes = await authenticatedFetch('http://localhost:8000/reprocess/debit', { method: 'POST' });
             if (!debitRes.ok) throw new Error('Failed to reprocess debit transactions');
 
             setProcessingStatus('Reprocessing complete!');

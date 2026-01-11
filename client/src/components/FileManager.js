@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authenticatedFetch } from '../utils/api';
 
 const FileManager = ({ uploadType, onReprocess }) => {
   const [files, setFiles] = useState([]);
@@ -8,7 +9,7 @@ const FileManager = ({ uploadType, onReprocess }) => {
   const fetchFiles = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`http://localhost:8000/files/${uploadType}`);
+      const response = await authenticatedFetch(`http://localhost:8000/files/${uploadType}`);
       const data = await response.json();
       if (data.files) {
         setFiles(data.files);
@@ -33,12 +34,12 @@ const FileManager = ({ uploadType, onReprocess }) => {
     }
 
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `http://localhost:8000/files/${uploadType}/${encodeURIComponent(filename)}`,
         { method: 'DELETE' }
       );
       const data = await response.json();
-      
+
       if (response.ok) {
         fetchFiles(); // Refresh list
         alert('File deleted successfully');
@@ -58,12 +59,12 @@ const FileManager = ({ uploadType, onReprocess }) => {
 
     setLoading(true);
     try {
-      const response = await fetch(
+      const response = await authenticatedFetch(
         `http://localhost:8000/reprocess/${uploadType}`,
         { method: 'POST' }
       );
       const data = await response.json();
-      
+
       if (response.ok) {
         alert('Re-processing complete! Refreshing transactions...');
         if (onReprocess) {

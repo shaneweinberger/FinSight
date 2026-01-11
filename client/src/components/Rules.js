@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trash2, Plus, RefreshCw, AlertCircle, Edit2, X, Check } from 'lucide-react';
+import { authenticatedFetch } from '../utils/api';
 
 const Rules = () => {
     const [rules, setRules] = useState([]);
@@ -22,7 +23,7 @@ const Rules = () => {
 
     const fetchRules = async () => {
         try {
-            const response = await fetch('http://localhost:8000/rules');
+            const response = await authenticatedFetch('http://localhost:8000/rules');
             if (!response.ok) throw new Error('Failed to fetch rules');
             const data = await response.json();
             setRules(data.rules || []);
@@ -39,9 +40,8 @@ const Rules = () => {
         if (!newRule.trim()) return;
 
         try {
-            const response = await fetch('http://localhost:8000/rules', {
+            const response = await authenticatedFetch('http://localhost:8000/rules', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: newRule.trim(),
                     type: ruleType
@@ -65,7 +65,7 @@ const Rules = () => {
         if (!window.confirm('Are you sure you want to delete this rule?')) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/rules/${ruleId}`, {
+            const response = await authenticatedFetch(`http://localhost:8000/rules/${ruleId}`, {
                 method: 'DELETE',
             });
 
@@ -97,9 +97,8 @@ const Rules = () => {
         if (!editContent.trim()) return;
 
         try {
-            const response = await fetch(`http://localhost:8000/rules/${editingId}`, {
+            const response = await authenticatedFetch(`http://localhost:8000/rules/${editingId}`, {
                 method: 'PUT',
-                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     content: editContent.trim(),
                     type: editType
@@ -129,12 +128,12 @@ const Rules = () => {
         try {
             // Reprocess credit files
             setProcessingStatus('Reprocessing credit transactions...');
-            const creditRes = await fetch('http://localhost:8000/reprocess/credit', { method: 'POST' });
+            const creditRes = await authenticatedFetch('http://localhost:8000/reprocess/credit', { method: 'POST' });
             if (!creditRes.ok) throw new Error('Failed to reprocess credit transactions');
 
             // Reprocess debit files
             setProcessingStatus('Reprocessing debit transactions...');
-            const debitRes = await fetch('http://localhost:8000/reprocess/debit', { method: 'POST' });
+            const debitRes = await authenticatedFetch('http://localhost:8000/reprocess/debit', { method: 'POST' });
             if (!debitRes.ok) throw new Error('Failed to reprocess debit transactions');
 
             setProcessingStatus('Reprocessing complete!');

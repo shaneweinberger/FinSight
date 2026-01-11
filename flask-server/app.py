@@ -5,8 +5,9 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 
 from config import API_HOST, API_PORT, DEBUG
-from services import TransactionService, UploadService, PipelineService, RuleService
+from services import TransactionService, UploadService, PipelineService, RuleService, ChatService
 from utils import transactions_to_json
+from services.supabase_service import require_auth
 
 
 def create_app():
@@ -15,12 +16,16 @@ def create_app():
     CORS(app)
     
     # Initialize services
+    # Note: Services are context-unaware until methods are called, so this is fine.
+    # But methods relying on 'g.token' must be called within request context.
     transaction_service = TransactionService()
     upload_service = UploadService()
     pipeline_service = PipelineService()
     rule_service = RuleService()
+    chat_service = ChatService()
     
     @app.route('/rules', methods=['GET'])
+    @require_auth
     def get_rules():
         """Get all rules and metadata."""
         data = rule_service.get_data()
@@ -30,6 +35,7 @@ def create_app():
         })
 
     @app.route('/rules', methods=['POST'])
+    @require_auth
     def add_rule():
         """Add a new rule."""
         data = request.json
@@ -43,6 +49,7 @@ def create_app():
         return jsonify(rule.to_dict()), 201
         
     @app.route('/rules/<rule_id>', methods=['PUT'])
+    @require_auth
     def update_rule(rule_id):
         """Update a rule."""
         data = request.json
@@ -60,6 +67,7 @@ def create_app():
         return jsonify({'error': 'Rule not found'}), 404
 
     @app.route('/rules/<rule_id>', methods=['DELETE'])
+    @require_auth
     def delete_rule(rule_id):
         """Delete a rule."""
         success = rule_service.delete_rule(rule_id)
@@ -67,12 +75,33 @@ def create_app():
             return jsonify({'message': 'Rule deleted successfully'}), 200
         return jsonify({'error': 'Rule not found'}), 404
 
+    @app.route('/chat', methods=['POST', 'OPTIONS'])
+    @require_auth
+    def chat():
+        """Handle chat interactions."""
+        if request.method == 'OPTIONS':
+            # Preflight request. Reply successfully:
+            return '', 200
+        
+        try:
+            data = request.json
+            if not data or 'message' not in data:
+                return jsonify({'error': 'Message is required'}), 400
+            
+            user_message = data['message']
+            chat_response = chat_service.get_chat_response(user_message)
+            return jsonify({'response': chat_response})
+        except Exception as e:
+            print(f"Error in chat endpoint: {e}")
+            return jsonify({'error': f'Server error: {str(e)}'}), 500
+
     @app.route('/health', methods=['GET'])
     def health_check():
         """Health check endpoint."""
         return jsonify({'status': 'healthy', 'message': 'FinSight API is running'})
     
     @app.route('/upload-csv', methods=['POST'])
+    @require_auth
     def upload_csv():
         """Handle CSV file uploads and trigger ETL processing."""
         try:
@@ -154,11 +183,12 @@ def create_app():
             return jsonify({'error': message}), 400
 
     @app.route('/reprocess/<upload_type>', methods=['POST'])
+    @require_auth
     def reprocess_files(upload_type):
-        """Reprocess all files of a given type."""
-        # Use the NEW PipelineService
-        print(f"Reprocessing {upload_type} using new PipelineService...")
-        result = pipeline_service.run_pipeline(upload_type)
+        """Reprocess all files of a given type. (Deprecated)"""
+        # The concept of reprocessing files is deprecated in favor of DB.
+        # Maybe allow re-running categorization?
+        return jsonify({'message': 'File reprocessing is deprecated. Please manage data via the Interface.'}), 200
         
         if result['success']:
             return jsonify({'message': f"Successfully reprocessed {upload_type} transactions", 'details': result['results']}), 200
@@ -166,6 +196,7 @@ def create_app():
             return jsonify({'error': result['error']}), 500
     
     @app.route('/transactions', methods=['GET'])
+    @require_auth
     def get_transactions():
         """Get all transactions."""
         transactions = transaction_service.get_all_transactions()
@@ -173,6 +204,7 @@ def create_app():
         return jsonify({'transactions': [t.to_dict() for t in transactions]})
     
     @app.route('/categories', methods=['GET'])
+    @require_auth
     def get_categories():
         """Get all available categories."""
         try:
@@ -182,6 +214,7 @@ def create_app():
             return jsonify({'error': f'Server error: {str(e)}'}), 500
 
     @app.route('/categories', methods=['POST'])
+    @require_auth
     def add_category():
         """Add a new category."""
         try:
@@ -203,6 +236,7 @@ def create_app():
             return jsonify({'error': f'Server error: {str(e)}'}), 500
 
     @app.route('/categories/<category>', methods=['DELETE'])
+    @require_auth
     def delete_category(category):
         """Delete a category."""
         try:
@@ -216,12 +250,14 @@ def create_app():
             return jsonify({'error': f'Server error: {str(e)}'}), 500
     
     @app.route('/stats', methods=['GET'])
+    @require_auth
     def get_stats():
         """Get transaction statistics."""
         stats = transaction_service.get_transaction_stats()
         return jsonify(stats)
     
     @app.route('/transactions/<transaction_id>', methods=['PATCH'])
+    @require_auth
     def update_transaction(transaction_id):
         """Update a transaction."""
         try:
@@ -257,6 +293,7 @@ def create_app():
             return jsonify({'error': str(e)}), 500
     
     @app.route('/transactions/bulk-update', methods=['POST'])
+    @require_auth
     def bulk_update_transactions():
         """Bulk update transactions."""
         try:

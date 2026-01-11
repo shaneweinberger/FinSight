@@ -1,98 +1,62 @@
 """
-Transaction service for handling transaction data operations.
+Transaction service for handling transaction data operations via Supabase.
 """
-import pandas as pd
 from typing import List, Dict, Any
-from pathlib import Path
-import json
-
-from config import GOLD_DIR, CREDIT_CLEANED_UPDATED_FILE, DEBIT_CLEANED_UPDATED_FILE
+from flask import g
+from services.supabase_service import SupabaseService
 from models.transaction import Transaction
-from utils.csv_initializer import initialize_updated_files, get_updated_file_paths, update_transaction_in_file, bulk_update_transactions_in_file
-
 
 class TransactionService:
-    """Service for managing transaction data."""
+    """Service for managing transaction data via Supabase."""
     
     def __init__(self):
-        self.gold_dir = GOLD_DIR
-        self.credit_file = CREDIT_CLEANED_UPDATED_FILE
-        self.debit_file = DEBIT_CLEANED_UPDATED_FILE
-        # self.merged_file = MERGED_FILE # Deprecated
-        
-        # Initialize updated files on first run
-        initialize_updated_files()
+        # We no longer need file paths
+        pass
     
+    def get_client(self):
+        """Get the authenticated Supabase client for the current user."""
+        if 'token' not in g:
+            # If called outside of request context or without auth, 
+            # we might want to throw error or handle gracefully.
+            # For now, assume it's used within @require_auth routes.
+            raise Exception("No authenticated user found")
+        return SupabaseService.get_auth_client(g.token)
+
     def get_all_transactions(self) -> List[Transaction]:
         """
-        Retrieve all transactions from updated data files.
-        Returns combined credit and debit transactions sorted by date (newest first).
+        Retrieve all transactions for the current user.
         """
         try:
-            # Get updated file paths (fallback to original if updated don't exist)
-            updated_files = get_updated_file_paths()
+            client = self.get_client()
+            # Select all fields, order by transaction_date desc
+            response = client.table('transactions')\
+                .select('*')\
+                .order('transaction_date', desc=True)\
+                .execute()
             
-            # Process individual files first to ensure IDs are generated and saved
-            all_dfs = []
+            data = response.data
+            transactions = []
             
-            # Process credit file
-            if updated_files['credit'].exists():
-                credit_df = pd.read_csv(updated_files['credit'])
-                if 'Transaction ID' not in credit_df.columns:
-                    credit_df['Transaction ID'] = None
+            for row in data:
+                # Map Supabase row to Transaction model
+                # Note: 'id' is the internal UUID, 'transaction_id' is the optional text ID
+                # The model uses 'transaction_id' to store... wait. 
+                # Model 'transaction_id' field maps to 'Transaction ID' in dict.
+                # In DB: 'id' (uuid), 'transaction_id' (text, legacy).
                 
-                # Generate IDs for rows missing them
-                import uuid
-                needs_credit_save = False
-                for idx in credit_df.index:
-                    tx_id = credit_df.at[idx, 'Transaction ID']
-                    if pd.isna(tx_id) or (isinstance(tx_id, str) and tx_id.strip() == ''):
-                        credit_df.at[idx, 'Transaction ID'] = str(uuid.uuid4())
-                        needs_credit_save = True
+                # Let's map DB 'id' -> Model 'transaction_id' for consistency in identifying records
+                # OR use the 'transaction_id' field if we want to preserve legacy IDs?
+                # The frontend likely expects an ID to update.
                 
-                if needs_credit_save:
-                    cols = ['Transaction ID'] + [col for col in credit_df.columns if col != 'Transaction ID']
-                    credit_df = credit_df[cols]
-                    credit_df.to_csv(updated_files['credit'], index=False)
-                    print(f"Generated and saved Transaction IDs to credit file")
+                t = Transaction(
+                    transaction_date=row['transaction_date'],
+                    description=row['description'],
+                    category=row['category'],
+                    amount=row['amount'],
+                    transaction_id=row['id'] # Use the Supabase UUID as the main ID
+                )
+                transactions.append(t)
                 
-                all_dfs.append(credit_df)
-            
-            # Process debit file
-            if updated_files['debit'].exists():
-                debit_df = pd.read_csv(updated_files['debit'])
-                if 'Transaction ID' not in debit_df.columns:
-                    debit_df['Transaction ID'] = None
-                
-                # Generate IDs for rows missing them
-                import uuid
-                needs_debit_save = False
-                for idx in debit_df.index:
-                    tx_id = debit_df.at[idx, 'Transaction ID']
-                    if pd.isna(tx_id) or (isinstance(tx_id, str) and tx_id.strip() == ''):
-                        debit_df.at[idx, 'Transaction ID'] = str(uuid.uuid4())
-                        needs_debit_save = True
-                
-                if needs_debit_save:
-                    cols = ['Transaction ID'] + [col for col in debit_df.columns if col != 'Transaction ID']
-                    debit_df = debit_df[cols]
-                    debit_df.to_csv(updated_files['debit'], index=False)
-                    print(f"Generated and saved Transaction IDs to debit file")
-                
-                all_dfs.append(debit_df)
-            
-            if not all_dfs:
-                return []
-            
-            # Combine the processed dataframes
-            df = pd.concat(all_dfs, ignore_index=True)
-            
-            # Clean and convert to Transaction objects
-            transactions = self._dataframe_to_transactions(df)
-            
-            # Sort by date (newest first)
-            transactions.sort(key=lambda x: x.transaction_date, reverse=True)
-            
             return transactions
             
         except Exception as e:
@@ -100,19 +64,19 @@ class TransactionService:
             return []
     
     def get_categories(self) -> Dict[str, Any]:
-        """Get all available categories."""
-        categories_file = self.gold_dir / "categories.json"
-        
-        if not categories_file.exists():
-            return {"categories": [], "metadata": {}}
-        
+        """Get all available categories for the current user."""
         try:
-            with open(categories_file, 'r') as f:
-                data = json.load(f)
-                # Filter out empty strings
-                if 'categories' in data:
-                    data['categories'] = [c for c in data['categories'] if c and c.strip()]
-                return data
+            client = self.get_client()
+            response = client.table('categories').select('name').order('name').execute()
+            
+            categories = [row['name'] for row in response.data]
+            
+            return {
+                "categories": categories,
+                "metadata": {
+                    "total_categories": len(categories)
+                }
+            }
         except Exception as e:
             print(f"Error loading categories: {e}")
             return {"categories": [], "metadata": {}}
@@ -120,23 +84,11 @@ class TransactionService:
     def add_category(self, category_name: str) -> bool:
         """Add a new category."""
         try:
-            categories_file = self.gold_dir / "categories.json"
-            data = self.get_categories()
-            
-            if category_name in data['categories']:
-                return False  # Already exists
-            
-            data['categories'].append(category_name)
-            data['categories'].sort()
-            
-            # Update metadata
-            from datetime import datetime
-            data['metadata']['last_updated'] = datetime.now().strftime('%Y-%m-%d')
-            data['metadata']['total_categories'] = len(data['categories'])
-            
-            with open(categories_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            
+            client = self.get_client()
+            if not category_name or not category_name.strip():
+                return False
+                
+            client.table('categories').insert({'name': category_name.strip(), 'user_id': g.user.id}).execute()
             return True
         except Exception as e:
             print(f"Error adding category: {e}")
@@ -145,58 +97,17 @@ class TransactionService:
     def delete_category(self, category_name: str) -> bool:
         """Delete a category."""
         try:
-            categories_file = self.gold_dir / "categories.json"
-            data = self.get_categories()
-            
-            if category_name not in data['categories']:
-                return False  # Doesn't exist
-            
-            data['categories'].remove(category_name)
-            
-            # Update metadata
-            from datetime import datetime
-            data['metadata']['last_updated'] = datetime.now().strftime('%Y-%m-%d')
-            data['metadata']['total_categories'] = len(data['categories'])
-            
-            with open(categories_file, 'w') as f:
-                json.dump(data, f, indent=2)
-            
+            client = self.get_client()
+            client.table('categories').delete().eq('name', category_name).execute()
             return True
         except Exception as e:
             print(f"Error deleting category: {e}")
             return False
     
-    def _dataframe_to_transactions(self, df: pd.DataFrame) -> List[Transaction]:
-        """Convert DataFrame to list of Transaction objects."""
-        transactions = []
-        
-        # Clean NaN values
-        df = df.where(pd.notnull(df), None)
-        
-        # Ensure Transaction ID column exists - generate IDs for rows that don't have them
-        if 'Transaction ID' not in df.columns:
-            df['Transaction ID'] = None
-        
-        for _, row in df.iterrows():
-            try:
-                # Clean up any remaining NaN values
-                clean_row = {}
-                for key, value in row.items():
-                    if pd.isna(value):
-                        clean_row[key] = None
-                    else:
-                        clean_row[key] = value
-                
-                transaction = Transaction.from_dict(clean_row)
-                transactions.append(transaction)
-            except Exception as e:
-                print(f"Error creating transaction from row: {e}")
-                continue
-        
-        return transactions
-    
     def get_transaction_stats(self) -> Dict[str, Any]:
         """Get basic statistics about transactions."""
+        # We can do this with SQL aggregation or just fetch all (if not too many)
+        # Fetching all is easier for now to reuse logic
         transactions = self.get_all_transactions()
         
         if not transactions:
@@ -221,33 +132,129 @@ class TransactionService:
             "categories": sorted(categories)
         }
     
+    
+    def import_transactions(self, df: pd.DataFrame) -> dict:
+        """
+        Import transactions from a DataFrame.
+        Handles deduplication against existing data.
+        Returns stats: {'imported': int, 'duplicates': int, 'errors': int}
+        """
+        results = {'imported': 0, 'duplicates': 0, 'errors': 0}
+        
+        try:
+            client = self.get_client()
+            user_id = g.user.id
+            
+            if df.empty:
+                return results
+                
+            # Clean dataframe
+            df = df.where(pd.notnull(df), None)
+            
+            # 1. Fetch existing transactions to verify duplicates
+            # Optimization: Fetch only transactions with matching amounts/dates?
+            # For now, let's fetch all (assuming < 10k transactions). 
+            # If large, we should filter by date range of the input DF.
+            
+            # Determine date range of input
+            df['Transaction Date'] = pd.to_datetime(df['Transaction Date'])
+            min_date = df['Transaction Date'].min().strftime('%Y-%m-%d')
+            max_date = df['Transaction Date'].max().strftime('%Y-%m-%d')
+            
+            # Fetch existing for this range
+            existing_response = client.table('transactions')\
+                .select('transaction_date, description, amount')\
+                .gte('transaction_date', min_date)\
+                .lte('transaction_date', max_date)\
+                .execute()
+                
+            existing = existing_response.data
+            
+            # Build set of existing signatures: (date, description, amount)
+            # Note: Amount comparison needs care (float vs decimal).
+            # Let's stringify amount to 2 decimal places for comparison?
+            existing_sigs = set()
+            for r in existing:
+                amt = float(r['amount']) if r['amount'] is not None else 0.0
+                sig = (
+                    r['transaction_date'], 
+                    r['description'].strip(), 
+                    round(amt, 2)
+                )
+                existing_sigs.add(sig)
+            
+            # 2. Filter new transactions
+            new_rows = []
+            
+            for _, row in df.iterrows():
+                try:
+                    t_date = row['Transaction Date'].strftime('%Y-%m-%d')
+                    desc = str(row['Description']).strip()
+                    amt = float(row['Amount']) if row['Amount'] is not None else 0.0
+                    
+                    sig = (t_date, desc, round(amt, 2))
+                    
+                    if sig in existing_sigs:
+                        results['duplicates'] += 1
+                        continue
+                    
+                    # Prepare for insert
+                    new_rows.append({
+                        'user_id': user_id,
+                        'transaction_date': t_date,
+                        'description': desc,
+                        'category': row['Category'] if row['Category'] else 'Uncategorized',
+                        'amount': amt,
+                        # 'transaction_id': row.get('Transaction ID') # Optional legacy ID
+                    })
+                    
+                    # Add to sigs to prevent duplicates WITHIN the import file
+                    existing_sigs.add(sig)
+                    
+                except Exception as row_e:
+                    print(f"Error processing row for import: {row_e}")
+                    results['errors'] += 1
+            
+            # 3. Bulk Insert
+            if new_rows:
+                # Supabase batch insert
+                batch_size = 100
+                for i in range(0, len(new_rows), batch_size):
+                    batch = new_rows[i:i+batch_size]
+                    client.table('transactions').insert(batch).execute()
+                    results['imported'] += len(batch)
+                    
+            return results
+            
+        except Exception as e:
+            print(f"Error importing transactions: {e}")
+            import traceback
+            traceback.print_exc()
+            return results
+
     def update_transaction(self, transaction_id: str, updates: dict) -> bool:
         """
         Update a single transaction.
-        Returns True if successful, False otherwise.
         """
         try:
-            updated_files = get_updated_file_paths()
-            print(f"Attempting to update transaction {transaction_id} with updates: {updates}")
-            print(f"Available files: {[(k, v, v.exists()) for k, v in updated_files.items()]}")
+            client = self.get_client()
             
-            # Try to update in merged file first (only if it has content)
-            if updated_files['merged'].exists() and updated_files['merged'].stat().st_size > 0:
-                print("Using merged file for update")
-                return update_transaction_in_file(updated_files['merged'], transaction_id, updates)
+            # Map frontend keys to DB keys
+            # updates keys are likely 'Category', 'Description' (capitalized) logic from frontend?
+            # Or 'category', 'description'.
+            db_updates = {}
+            if 'category' in updates: db_updates['category'] = updates['category']
+            if 'Category' in updates: db_updates['category'] = updates['Category']
+            if 'description' in updates: db_updates['description'] = updates['description']
+            if 'Description' in updates: db_updates['description'] = updates['Description']
+            if 'amount' in updates: db_updates['amount'] = updates['amount']
+            if 'Amount' in updates: db_updates['amount'] = updates['Amount']
             
-            # If no merged file or it's empty, we need to determine which individual file to update
-            # For now, we'll try both credit and debit files
-            success = False
-            if updated_files['credit'].exists():
-                print("Trying credit file for update")
-                success = update_transaction_in_file(updated_files['credit'], transaction_id, updates)
-            if not success and updated_files['debit'].exists():
-                print("Trying debit file for update")
-                success = update_transaction_in_file(updated_files['debit'], transaction_id, updates)
+            if not db_updates:
+                return False
             
-            print(f"Update result: {success}")
-            return success
+            client.table('transactions').update(db_updates).eq('id', transaction_id).execute()
+            return True
             
         except Exception as e:
             print(f"Error updating transaction {transaction_id}: {e}")
@@ -256,36 +263,21 @@ class TransactionService:
     def bulk_update_transactions(self, updates: list) -> bool:
         """
         Update multiple transactions.
-        Updates should be a list of dicts with 'id' and 'updates' keys.
-        Returns True if successful, False otherwise.
+        Updates: list of dicts with 'id' and 'updates'.
         """
         try:
-            updated_files = get_updated_file_paths()
-            
-            # Try to update in merged file first (only if it has content)
-            if updated_files['merged'].exists() and updated_files['merged'].stat().st_size > 0:
-                return bulk_update_transactions_in_file(updated_files['merged'], updates)
-            
-            # If no merged file or it's empty, try both credit and debit files
-            # Different transactions may be in different files, so we need to update all files
-            # The bulk_update_transactions_in_file function will only update transactions that exist in each file
-            credit_success = False
-            debit_success = False
-            
-            if updated_files['credit'].exists():
-                print(f"Attempting to update transactions in credit file: {updated_files['credit']}")
-                credit_success = bulk_update_transactions_in_file(updated_files['credit'], updates)
-            
-            if updated_files['debit'].exists():
-                print(f"Attempting to update transactions in debit file: {updated_files['debit']}")
-                debit_success = bulk_update_transactions_in_file(updated_files['debit'], updates)
-            
-            # Consider it successful if at least one file was updated (or if files processed updates)
-            # Both files may have been updated since transactions are distributed across them
-            return credit_success or debit_success
-            
+            # Supabase doesn't support bulk update with different values per row easily in one call
+            # unless we use upsert with all data specified.
+            # Since we are patching potentially partial updates, loop is safer for now.
+            # Performance note: For huge lists this is slow. 
+            count = 0
+            for update_item in updates:
+                tx_id = update_item.get('id')
+                tx_updates = update_item.get('updates')
+                if tx_id and tx_updates:
+                    if self.update_transaction(tx_id, tx_updates):
+                        count += 1
+            return count > 0
         except Exception as e:
             print(f"Error bulk updating transactions: {e}")
-            import traceback
-            traceback.print_exc()
             return False

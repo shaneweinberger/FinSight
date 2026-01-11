@@ -3,6 +3,7 @@ import SummaryCard from './SummaryCard';
 import TimeFilter from './TimeFilter';
 import Pagination from './Pagination';
 import ExpensesByCategory from './ExpensesByCategory';
+import { authenticatedFetch } from '../utils/api';
 
 // Helper function to sort transactions by date (newest first)
 const sortTransactionsByDate = (txs) => {
@@ -38,7 +39,7 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('http://localhost:8000/categories');
+        const response = await authenticatedFetch('http://localhost:8000/categories');
         const data = await response.json();
         setCategories(data.categories || []);
       } catch (error) {
@@ -156,11 +157,8 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
         };
       });
 
-      const response = await fetch('http://localhost:8000/transactions/bulk-update', {
+      const response = await authenticatedFetch('http://localhost:8000/transactions/bulk-update', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({ updates }),
       });
 

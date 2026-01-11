@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { authenticatedFetch } from '../utils/api';
 
 const DebitCategorizer = ({ transactions, onCategorize }) => {
   const [categories, setCategories] = useState([]);
@@ -8,7 +9,7 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
 
   // Fetch categories from backend
   useEffect(() => {
-    fetch('http://localhost:8000/categories')
+    authenticatedFetch('http://localhost:8000/categories')
       .then(res => res.json())
       .then(data => {
         if (data.categories) {
@@ -21,7 +22,7 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
   // Filter uncategorized transactions
   useEffect(() => {
     if (transactions) {
-      const uncategorized = transactions.filter(tx => 
+      const uncategorized = transactions.filter(tx =>
         !tx.Category || tx.Category === 'Uncategorized' || tx.Category === ''
       );
       setUncategorizedTransactions(uncategorized);
@@ -44,7 +45,7 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
   return (
     <div className="bg-white rounded-xl shadow p-6 mb-6">
       <h3 className="text-lg font-semibold text-gray-800 mb-4">Categorize Debit Transactions</h3>
-      
+
       {uncategorizedTransactions.length === 0 ? (
         <div className="text-gray-500 text-sm">No uncategorized transactions found.</div>
       ) : (
@@ -56,9 +57,8 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
               {uncategorizedTransactions.map((tx, idx) => (
                 <div
                   key={idx}
-                  className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${
-                    selectedTransaction === tx ? 'bg-blue-50 border-blue-200' : ''
-                  }`}
+                  className={`p-3 border-b cursor-pointer hover:bg-gray-50 ${selectedTransaction === tx ? 'bg-blue-50 border-blue-200' : ''
+                    }`}
                   onClick={() => handleTransactionSelect(tx)}
                 >
                   <div className="font-medium text-sm">{tx.Description}</div>
@@ -81,7 +81,7 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
                     {selectedTransaction['Transaction Date']} • ${Math.abs(parseFloat(selectedTransaction.Amount)).toFixed(2)}
                   </div>
                 </div>
-                
+
                 <select
                   value={selectedCategory}
                   onChange={(e) => setSelectedCategory(e.target.value)}
@@ -92,7 +92,7 @@ const DebitCategorizer = ({ transactions, onCategorize }) => {
                     <option key={cat} value={cat}>{cat}</option>
                   ))}
                 </select>
-                
+
                 <button
                   onClick={handleCategorize}
                   disabled={!selectedCategory}

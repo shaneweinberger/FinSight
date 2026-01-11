@@ -1,5 +1,6 @@
 import React, { useState, useRef } from 'react';
 import FileManager from './FileManager';
+import { authenticatedFetch } from '../utils/api';
 
 const TransactionUploads = ({ onReprocess }) => {
   const [creditCsvFile, setCreditCsvFile] = useState(null);
@@ -30,22 +31,22 @@ const TransactionUploads = ({ onReprocess }) => {
     formData.append('file', file);
     formData.append('type', type);
     try {
-      const response = await fetch('http://localhost:8000/upload-csv', {
+      const response = await authenticatedFetch('http://localhost:8000/upload-csv', {
         method: 'POST',
         body: formData,
       });
-      
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `HTTP ${response.status}: ${response.statusText}`);
       }
-      
+
       const data = await response.json();
       if (data.message) {
         setUploadStatus(`${type === 'credit' ? 'Credit' : 'Debit'} upload successful! Processing...`);
         if (type === 'credit') setCreditCsvFile(null);
         if (type === 'debit') setDebitCsvFile(null);
-        
+
         // Wait a moment for ETL to process
         setTimeout(() => {
           setUploadStatus(`${type === 'credit' ? 'Credit' : 'Debit'} upload and processing complete!`);
@@ -66,7 +67,7 @@ const TransactionUploads = ({ onReprocess }) => {
     <div className="space-y-6">
       <div className="bg-white rounded-xl shadow p-6">
         <h2 className="text-2xl font-bold text-gray-800 mb-6">Upload Transactions</h2>
-        
+
         {/* Credit Card Upload Section */}
         <div className="mb-8">
           <h3 className="text-lg font-semibold text-gray-700 mb-4">Credit Card Transactions</h3>
@@ -134,11 +135,10 @@ const TransactionUploads = ({ onReprocess }) => {
         </div>
 
         {uploadStatus && (
-          <div className={`mt-4 p-3 rounded-lg text-sm ${
-            uploadStatus.includes('success') || uploadStatus.includes('complete') 
-              ? 'bg-green-50 text-green-700' 
+          <div className={`mt-4 p-3 rounded-lg text-sm ${uploadStatus.includes('success') || uploadStatus.includes('complete')
+              ? 'bg-green-50 text-green-700'
               : 'bg-red-50 text-red-700'
-          }`}>
+            }`}>
             {uploadStatus}
           </div>
         )}
@@ -146,12 +146,12 @@ const TransactionUploads = ({ onReprocess }) => {
 
       {/* File Management Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <FileManager 
-          uploadType="credit" 
+        <FileManager
+          uploadType="credit"
           onReprocess={onReprocess}
         />
-        <FileManager 
-          uploadType="debit" 
+        <FileManager
+          uploadType="debit"
           onReprocess={onReprocess}
         />
       </div>

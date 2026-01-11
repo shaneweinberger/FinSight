@@ -1,44 +1,34 @@
 """
-Service for managing user-defined rules.
+Service for managing user-defined rules via Supabase.
 """
 from typing import List, Optional
-import json
-from pathlib import Path
-from config import GOLD_DIR
+from flask import g
+from services.supabase_service import SupabaseService
 from models.rule import Rule
 
 class RuleService:
-    """Service for managing categorization rules."""
+    """Service for managing categorization rules via Supabase."""
     
     def __init__(self):
-        self.rules_file = GOLD_DIR / "rules.json"
-        self._ensure_file_exists()
+        pass
+    
+    def get_client(self):
+        if 'token' not in g:
+            raise Exception("No authenticated user found")
+        return SupabaseService.get_auth_client(g.token)
         
-    def _ensure_file_exists(self):
-        """Ensure rules file exists."""
-        if not self.rules_file.exists():
-            self._save_data([], {'last_reprocessed': None})
-            
-    def _save_data(self, rules: List[Rule], metadata: dict):
-        """Save rules and metadata to file."""
-        data = {
-            'rules': [r.to_dict() for r in rules],
-            'metadata': metadata
-        }
-        with open(self.rules_file, 'w') as f:
-            json.dump(data, f, indent=2)
-            
     def get_data(self):
-        """Get all rules and metadata."""
-        if not self.rules_file.exists():
-            return {'rules': [], 'metadata': {}}
-            
+        """Get all rules and metadata (metadata is just legacy now)."""
         try:
-            with open(self.rules_file, 'r') as f:
-                data = json.load(f)
-                rules = [Rule.from_dict(r) for r in data.get('rules', [])]
-                metadata = data.get('metadata', {})
-                return {'rules': rules, 'metadata': metadata}
+            client = self.get_client()
+            response = client.table('rules').select('*').execute()
+            rules = [Rule.from_dict(r) for r in response.data]
+            
+            # Supabase doesn't easily store random metadata.
+            # We will ignore 'last_reprocessed' for now or store it in a dedicated 'settings' table if needed.
+            # For this simple port, let's just return empty metadata.
+            return {'rules': rules, 'metadata': {}}
+            
         except Exception as e:
             print(f"Error loading rules: {e}")
             return {'rules': [], 'metadata': {}}
@@ -48,44 +38,54 @@ class RuleService:
         return self.get_data()['rules']
 
     def get_last_reprocessed(self) -> Optional[str]:
-        """Get last reprocessed timestamp."""
-        return self.get_data()['metadata'].get('last_reprocessed')
+        """Get last reprocessed timestamp. (Not implemented in DB yet)"""
+        return None
         
     def set_last_reprocessed(self):
-        """Set last reprocessed timestamp to now."""
-        from datetime import datetime
-        data = self.get_data()
-        data['metadata']['last_reprocessed'] = datetime.now().isoformat()
-        self._save_data(data['rules'], data['metadata'])
+        """Set last reprocessed timestamp. (Not implemented in DB yet)"""
+        pass
             
     def add_rule(self, content: str, rule_type: str = 'both') -> Rule:
         """Add a new rule."""
-        data = self.get_data()
-        new_rule = Rule(content=content, rule_type=rule_type)
-        data['rules'].append(new_rule)
-        self._save_data(data['rules'], data['metadata'])
-        return new_rule
+        try:
+            client = self.get_client()
+            response = client.table('rules').insert({
+                'content': content, 
+                'type': rule_type,
+                'user_id': g.user.id
+            }).execute()
+            
+            if response.data:
+                return Rule.from_dict(response.data[0])
+            raise Exception("Insert failed")
+            
+        except Exception as e:
+            print(f"Error adding rule: {e}")
+            raise e
         
     def delete_rule(self, rule_id: str) -> bool:
         """Delete a rule by ID."""
-        data = self.get_data()
-        rules = data['rules']
-        initial_len = len(rules)
-        rules = [r for r in rules if r.rule_id != rule_id]
-        
-        if len(rules) < initial_len:
-            self._save_data(rules, data['metadata'])
+        try:
+            client = self.get_client()
+            # Supabase RLS ensures they can only delete their own
+            client.table('rules').delete().eq('id', rule_id).execute()
             return True
-        return False
+        except Exception as e:
+            print(f"Error deleting rule: {e}")
+            return False
         
     def update_rule(self, rule_id: str, content: str, rule_type: str) -> Optional[Rule]:
         """Update a rule."""
-        data = self.get_data()
-        rules = data['rules']
-        for rule in rules:
-            if rule.rule_id == rule_id:
-                rule.content = content
-                rule.rule_type = rule_type
-                self._save_data(rules, data['metadata'])
-                return rule
-        return None
+        try:
+            client = self.get_client()
+            response = client.table('rules').update({
+                'content': content,
+                'type': rule_type
+            }).eq('id', rule_id).execute()
+            
+            if response.data:
+                return Rule.from_dict(response.data[0])
+            return None
+        except Exception as e:
+            print(f"Error updating rule: {e}")
+            return None
