@@ -90,10 +90,23 @@ def create_app():
             success, message, data = upload_service.upload_file(file, upload_type)
             
             if success:
-                return jsonify({
-                    'message': message,
-                    **data
-                })
+                # Trigger new pipeline processing
+                print(f"File uploaded successfully. Triggering pipeline for {upload_type}...")
+                pipeline_result = pipeline_service.run_pipeline(upload_type)
+                
+                if pipeline_result['success']:
+                    return jsonify({
+                        'message': message,
+                        'pipeline_status': 'success',
+                        **data
+                    })
+                else:
+                    return jsonify({
+                        'message': message,
+                        'pipeline_status': 'failed',
+                        'error': pipeline_result.get('error'),
+                        **data
+                    }), 206 # Partial success
             else:
                 return jsonify({'error': message}), 400
                 
@@ -121,18 +134,13 @@ def create_app():
         
         if success:
             # Trigger new pipeline
-            # Note: upload_service.upload_file already triggers the OLD ETL.
-            # We should disable that in upload_service or just run the new one after.
-            # For transition, let's run the new one to update the "cleaned_and_updated" files
-            # which are now the source of truth.
+            print(f"File uploaded successfully. Triggering pipeline for {upload_type}...")
+            pipeline_result = pipeline_service.run_pipeline(upload_type)
             
-            # Wait, if we run both, they might conflict on writing to the same files.
-            # The new pipeline writes to `credit_cleaned_and_updated.csv`.
-            # The old pipeline writes to `credit_cleaned.csv` and then syncs to `credit_cleaned_and_updated.csv`.
-            
-            # To switch over safely, we should probably update `upload_service` to use `pipeline_service`.
-            # But for this step, let's just return the result.
-            return jsonify({'message': message, 'data': data}), 200
+            if pipeline_result['success']:
+                return jsonify({'message': message, 'data': data, 'pipeline_status': 'success'}), 200
+            else:
+                return jsonify({'message': message, 'data': data, 'pipeline_status': 'failed', 'error': pipeline_result.get('error')}), 206
         else:
             return jsonify({'error': message}), 400
 
@@ -149,7 +157,14 @@ def create_app():
         """Delete an uploaded file."""
         success, message = upload_service.delete_uploaded_file(upload_type, filename)
         if success:
-            return jsonify({'message': message}), 200
+            # Trigger new pipeline to reflect deletion
+            print(f"File deleted successfully. Triggering pipeline for {upload_type}...")
+            pipeline_result = pipeline_service.run_pipeline(upload_type)
+            
+            if pipeline_result['success']:
+                return jsonify({'message': message, 'pipeline_status': 'success'}), 200
+            else:
+                return jsonify({'message': message, 'pipeline_status': 'failed', 'error': pipeline_result.get('error')}), 206
         else:
             return jsonify({'error': message}), 400
 

@@ -51,7 +51,11 @@ class PipelineService:
                     
                     results['credit'] = {'status': 'success', 'count': len(credit_df)}
                 else:
-                    results['credit'] = {'status': 'no_files', 'count': 0}
+                    # No files or empty files - Save empty Silver/Gold to clear data
+                    empty_df = pd.DataFrame(columns=['Transaction Date', 'Description', 'Amount', 'Category', 'Transaction ID'])
+                    self.loader.save_silver(empty_df, "credit_silver.csv")
+                    self.loader.generate_gold(empty_df, "credit_cleaned_and_updated.csv")
+                    results['credit'] = {'status': 'cleared', 'count': 0}
 
             # Process Debit
             if upload_type in ['all', 'debit']:
@@ -72,7 +76,11 @@ class PipelineService:
                     
                     results['debit'] = {'status': 'success', 'count': len(debit_df)}
                 else:
-                    results['debit'] = {'status': 'no_files', 'count': 0}
+                    # No files or empty files - Save empty Silver/Gold to clear data
+                    empty_df = pd.DataFrame(columns=['Transaction Date', 'Description', 'Amount', 'Category', 'Transaction ID'])
+                    self.loader.save_silver(empty_df, "debit_silver.csv")
+                    self.loader.generate_gold(empty_df, "debit_cleaned_and_updated.csv")
+                    results['debit'] = {'status': 'cleared', 'count': 0}
             
             # Update last reprocessed timestamp
             if self.rule_service:

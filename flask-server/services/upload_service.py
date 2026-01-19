@@ -77,8 +77,8 @@ class UploadService:
                 filepath.unlink()
                 return False, f"Invalid CSV file: {validation_result['error']}", {}
             
-            # Trigger ETL processing
-            self._trigger_etl(etl_script)
+            # Trigger ETL processing - REMOVED (Handled by PipelineService in app.py)
+            # self._trigger_etl(etl_script)
             
             return True, "File uploaded successfully", {
                 'filename': filename,

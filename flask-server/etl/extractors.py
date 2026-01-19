@@ -25,44 +25,59 @@ class CreditExtractor(BaseExtractor):
             # Try reading with headers first
             df = pd.read_csv(file_path)
             
-            # Check for headerless format (5 columns, first looks like date)
-            # Typical format: Date, Description, Debit, Credit, Balance
-            if len(df.columns) == 5 and 'Transaction Date' not in df.columns:
-                # Re-read without header
-                df = pd.read_csv(file_path, header=None)
-                df.columns = ['Transaction Date', 'Description', 'Debit', 'Credit', 'Balance']
-                
-                # Process amounts
-                # Debit is positive expense, Credit is negative expense (payment)
-                # We want Amount to be positive for expense, negative for income/payment?
-                # Wait, usually in this app:
-                # Expenses are positive? Let's check debit extractor.
-                # DebitExtractor: Amount = Outflow - Inflow. So Outflow (expense) is positive.
-                
-                df['Debit'] = pd.to_numeric(df['Debit'], errors='coerce').fillna(0)
-                df['Credit'] = pd.to_numeric(df['Credit'], errors='coerce').fillna(0)
-                
-                # For credit cards:
-                # Debit column = Purchase (Expense) -> Should be Positive
-                # Credit column = Payment (Income) -> Should be Negative
-                df['Amount'] = df['Debit'] - df['Credit']
-                
-                # Convert date
-                # Input format seems to be MM/DD/YYYY based on "10/18/2025"
-                df['Transaction Date'] = pd.to_datetime(df['Transaction Date']).dt.strftime('%m/%d/%Y')
-                
-                return df[['Transaction Date', 'Description', 'Amount']]
-
             # Handle different column names if necessary for files WITH headers
             if 'Transaction Date' not in df.columns and 'Date' in df.columns:
                 df['Transaction Date'] = df['Date']
+            
+            # Map Charge -> Debit
+            if 'Charge' in df.columns and 'Debit' not in df.columns:
+                df['Debit'] = df['Charge']
+            
+            # Check for headerless format (5 columns, first looks like date)
+            # Typical format: Date, Description, Debit, Credit, Balance
+            # Only assume headerless if we STILL have no Transaction Date
+            if len(df.columns) == 5 and 'Transaction Date' not in df.columns:
+                # Re-read without header
+                df_headerless = pd.read_csv(file_path, header=None)
+                df_headerless.columns = ['Transaction Date', 'Description', 'Debit', 'Credit', 'Balance']
                 
+                # Verify it's actually data and not just a header row read as data
+                # If the first value is "Date", then it was actually a header file that we failed to parse above?
+                # No, if it was "Date", pd.read_csv would have made it a column "Date".
+                # But wait, if the file has 5 columns: Date, Description, Debit, Credit, Balance
+                # pd.read_csv would give columns=['Date', 'Description', ...]
+                # So we would have caught it in the "Date" check above.
+                
+                # So this block is truly for files WITHOUT headers.
+                
+                # Process amounts
+                df_headerless['Debit'] = pd.to_numeric(df_headerless['Debit'], errors='coerce').fillna(0)
+                df_headerless['Credit'] = pd.to_numeric(df_headerless['Credit'], errors='coerce').fillna(0)
+                df_headerless['Amount'] = df_headerless['Debit'] - df_headerless['Credit']
+                
+                # Convert date
+                # Drop rows where Date is invalid (e.g. if it accidentally read a header)
+                df_headerless['Transaction Date'] = pd.to_datetime(df_headerless['Transaction Date'], errors='coerce')
+                df_headerless = df_headerless.dropna(subset=['Transaction Date'])
+                df_headerless['Transaction Date'] = df_headerless['Transaction Date'].dt.strftime('%m/%d/%Y')
+                
+                return df_headerless[['Transaction Date', 'Description', 'Amount']]
+
+            # Calculate Amount if missing but Debit/Credit exist
+            if 'Amount' not in df.columns and 'Debit' in df.columns and 'Credit' in df.columns:
+                df['Debit'] = pd.to_numeric(df['Debit'], errors='coerce').fillna(0)
+                df['Credit'] = pd.to_numeric(df['Credit'], errors='coerce').fillna(0)
+                df['Amount'] = df['Debit'] - df['Credit']
+            
             # Ensure required columns exist
             required_cols = ['Transaction Date', 'Description', 'Amount']
             for col in required_cols:
                 if col not in df.columns:
                     raise ValueError(f"Missing required column: {col} in {file_path}")
                     
+            # Normalize date format for standard CSVs too
+            df['Transaction Date'] = pd.to_datetime(df['Transaction Date']).dt.strftime('%m/%d/%Y')
+            
             return df[required_cols]
             
         except Exception as e:
@@ -108,6 +123,14 @@ class DebitExtractor(BaseExtractor):
                     if 'Date' in df.columns: df['Transaction Date'] = df['Date']
                     if 'Memo' in df.columns: df['Description'] = df['Memo']
                     if 'Value' in df.columns: df['Amount'] = df['Value']
+            
+            # Calculate Amount from Debit/Credit if missing
+            if 'Amount' not in df.columns and 'Debit' in df.columns and 'Credit' in df.columns:
+                df['Debit'] = pd.to_numeric(df['Debit'], errors='coerce').fillna(0)
+                df['Credit'] = pd.to_numeric(df['Credit'], errors='coerce').fillna(0)
+                # For debit accounts: Debit is Outflow (expense), Credit is Inflow (income)
+                # Amount = Outflow - Inflow
+                df['Amount'] = df['Debit'] - df['Credit']
             
             return df[required_cols]
             

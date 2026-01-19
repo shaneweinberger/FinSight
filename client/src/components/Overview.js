@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
-import SummaryCard from './SummaryCard';
 import Pagination from './Pagination';
+import CategoryTrendChart from './CategoryTrendChart';
+import ChatbotSidebar from './ChatbotSidebar';
 
 const Overview = ({ transactions }) => {
   const [currentPage, setCurrentPage] = useState(1);
@@ -29,49 +30,53 @@ const Overview = ({ transactions }) => {
   };
 
   return (
-    <div>
-      <SummaryCard transactions={transactions} />
-      
-      <div className="flex justify-between items-center mb-2">
-        <div className="text-lg font-bold">Product Analytics</div>
-        <div className="flex gap-2">
-          <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Customize</button>
-          <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Filter</button>
-          <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Export</button>
+    <div className="flex bg-gray-50 -m-8 h-[calc(100vh)]"> {/* Negative margin to counteract main padding, full height */}
+      <div className="flex-1 overflow-y-auto p-8 h-full w-full min-w-0"> {/* Main content wrapper with padding restoring */}
+        <CategoryTrendChart transactions={transactions} />
+
+        <div className="flex justify-between items-center mb-4 mt-8">
+          <div className="text-lg font-bold">Transactions</div>
+          <div className="flex gap-2">
+            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Customize</button>
+            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Filter</button>
+            <button className="px-3 py-2 rounded-lg bg-gray-100 text-gray-700 text-sm">Export</button>
+          </div>
         </div>
-      </div>
-      
-      <div className="bg-white rounded-xl shadow overflow-x-auto">
-        <table className="min-w-full text-sm">
-          <thead>
-            <tr>
-              {columns.map(col => (
-                <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {currentTransactions.map((tx, idx) => (
-              <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
+
+        <div className="bg-white rounded-xl shadow overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead>
+              <tr>
                 {columns.map(col => (
-                  <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>
+                  <th key={col.key} className="py-3 px-4 text-left font-semibold">{col.label}</th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {currentTransactions.map((tx, idx) => (
+                <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
+                  {columns.map(col => (
+                    <td key={col.key} className="py-3 px-4">{tx[col.key]}</td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        <Pagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          totalItems={transactions.length}
+          startIndex={startIndex}
+          endIndex={endIndex}
+          onPageChange={handlePageChange}
+          onPageSizeChange={handlePageSizeChange}
+        />
       </div>
-      
-      <Pagination
-        currentPage={currentPage}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        totalItems={transactions.length}
-        startIndex={startIndex}
-        endIndex={endIndex}
-        onPageChange={handlePageChange}
-        onPageSizeChange={handlePageSizeChange}
-      />
+
+      <ChatbotSidebar />
     </div>
   );
 };

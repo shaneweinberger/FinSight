@@ -225,7 +225,7 @@ const MonthlyAnalysis = ({ transactions, onRefresh }) => {
           </div>
 
           <div className="flex justify-between items-center mb-2">
-            <div className="text-lg font-bold">Analysis</div>
+            <div className="text-lg font-bold">Transactions</div>
             <div className="flex gap-2 items-center">
               {selectedCategory && (
                 <div className="flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-lg text-sm border border-blue-100">
